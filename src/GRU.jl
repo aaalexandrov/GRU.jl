@@ -1,14 +1,14 @@
-include("OGLHelper.jl")
+include("GLHelper.jl")
 include("Shapes.jl")
 include("Math2D.jl")
 include("Math3D.jl")
 include("Geom.jl")
 include("FTFont.jl")
 
-module GR
+module GRU
 
 using ModernGL
-using OGLHelper
+using GLHelper
 
 import DevIL
 import Shapes

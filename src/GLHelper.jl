@@ -1,4 +1,4 @@
-module OGLHelper
+module GLHelper
 
 using ModernGL
 
