@@ -1,9 +1,9 @@
 module Shapes
 
-import Base: similar
+import Base: similar, max, min
 
 export Shape, Space, Line, Plane, Sphere, AABB, Convex
-export isvalid, getnormal, getpoint, volume, addpoint, setplane, getintersection, intersect, outside, similar
+export isvalid, getnormal, getpoint, volume, addpoint, setplane, getintersection, intersect, outside, similar, min, max, inside
 
 
 iszero{T}(x::T) = abs(x) < eps(T)
@@ -60,7 +60,7 @@ intersect_interval(min1, max1, min2, max2) = (max(min1, min2), min(max1, max2))
 function quadroots(a, b, c)
     d = b*b-4a*c
     if d < zero(d)
-        return nan(a), nan(a)
+        return oftype(a, NaN), oftype(a, NaN)
     end
     sd = sqrt(d)
     x1 = (-b-sd)/2a
@@ -184,6 +184,9 @@ AABB(pmin, pmax) = AABB(pmin..., pmax...)
 isvalid{T}(aabb::AABB{T}) = size(aabb.p) == (3, 2) && aabb.p[1, 1] <= aabb.p[1, 2] && aabb.p[2, 1] <= aabb.p[2, 2] && aabb.p[3, 1] <= aabb.p[3, 2]
 volume(ab::AABB) = prod([ab.p[i, 2] - ab.p[i, 1] for i=1:3])
 
+min{T}(ab::AABB{T}) = ab.p[:, 1]
+max{T}(ab::AABB{T}) = ab.p[:, 2]
+
 function addpoint!{T}(minMax::Matrix{T}, p::Vector{T})
     @assert size(minMax) == (3, 2)
     @assert length(p) == 3
@@ -283,13 +286,13 @@ function getintersection{T}(l::Line{T}, p::Plane{T})
     d = dot(po-lo, pn)
     if iszero(vn)
         # line and plane are parallel
-        return iszero(d) ? inf(T) : nan(T)
+        return iszero(d) ? T(Inf) : T(NaN)
     end
 
     return d / vn
 end
 
-intersect{T}(l::Line{T}, p::Plane{T}) = getintersection(l, p) != nan(T)
+intersect{T}(l::Line{T}, p::Plane{T}) = !isnan(getintersection(l, p))
 intersect(p::Plane, l::Line) = intersect(l, p)
 
 
@@ -320,13 +323,13 @@ function getintersection{T}(l::Line{T}, ab::AABB{T})
             if ab.p[i, 1] <= lo <= ab.p[i, 2]
                 continue
             else
-                return nan(T), nan(T)
+                return T(NaN), T(NaN)
             end
         end
         dimInt = make_interval((ab.p[i, 1] - lo)/d, (ab.p[i, 2] - lo)/d)
         tInt = intersect_interval(tInt, dimInt)
         if empty_interval(tInt)
-            return nan(T), nan(T)
+            return T(NaN), T(NaN)
         end
     end
     return tInt
@@ -334,6 +337,17 @@ end
 
 intersect{T}(l::Line{T}, ab::AABB{T}) = !isnan(getintersection(l, ab)[1])
 intersect(ab::AABB, l::Line) = intersect(l, ab)
+
+function getintersection{T}(ab1::AABB{T}, ab2::AABB{T})
+  result = AABB{T}()
+  for i = 1:3
+    result.p[i, 1] = max(ab1.p[i, 1], ab2.p[i, 1])
+    result.p[i, 2] = min(ab1.p[i, 2], ab2.p[i, 2])
+  end
+  return result
+end
+
+intersect{T}(ab1::AABB{T}, ab2::AABB{T}) = isvalid(getintersection(ab1, ab2))
 
 
 # returns a line, a plane or nothing depending on the relative position of the planes
@@ -392,6 +406,31 @@ function outside{T}(c::Convex{T}, ab::AABB{T})
         end
     end
     return false
+end
+
+
+function inside{T}(enclosing::AABB{T}, ab::AABB{T})
+  @assert size(enclosing.p) == (3,2)
+  @assert size(ab.p) == (3,2)
+
+  @simd for i = 1:3
+    @inbounds if enclosing.p[i,1] > ab.p[i,1] || enclosing.p[i,2] < ab.p[i,2]
+      return false
+    end
+  end
+  return true
+end
+
+function inside{T}(enclosing::AABB{T}, p::Vector{T})
+  @assert size(enclosing.p) == (3,2)
+  @assert size(p) == (3,)
+
+  @simd for i = 1:3
+    @inbounds if !(enclosing.p[i,1] <= p[i] <= enclosing.p[i,2])
+      return false
+    end
+  end
+  return true
 end
 
 end
