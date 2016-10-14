@@ -125,7 +125,7 @@ end
 
 function set_array_field{T}(vert::Vector{T}, field::Symbol, values::Array)
     fieldInd = findfirst(fieldnames(T), field)
-    elType, elCount = typeelements(T.types[fieldInd])
+    elType, elCount = typeelements(fieldtype(T, fieldInd))
     offs = fieldoffset(T, fieldInd)
     dst = convert(Ptr{elType}, pointer(vert)) + offs
     valueStride = div(length(values), length(vert))
@@ -140,7 +140,11 @@ function set_array_field{T}(vert::Vector{T}, field::Symbol, values::Array)
 end
 
 function set_array_fields{T}(vert::Vector{T}, fieldArrays::Dict{Symbol, Array})
-    for (field, values) in fieldArrays
-        set_array_field(vert, field, values)
+    for field in fieldnames(T)
+      if haskey(fieldArrays, field)
+        set_array_field(vert, field, fieldArrays[field])
+      else
+        info("set_array_fields(): Missing data for field $field")
+      end
     end
 end
