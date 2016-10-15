@@ -144,7 +144,7 @@ function set_array_fields{T}(vert::Vector{T}, fieldArrays::Dict{Symbol, Array})
       if haskey(fieldArrays, field)
         set_array_field(vert, field, fieldArrays[field])
       else
-        info("set_array_fields(): Missing data for field $field")
+        info("GRU.set_array_fields(): Missing data for field $field")
       end
     end
 end
