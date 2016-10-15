@@ -1,8 +1,9 @@
+__precompile__()
+
 include("GLHelper.jl")
 include("Shapes.jl")
 include("Math2D.jl")
 include("Math3D.jl")
-include("Geom.jl")
 include("FTFont.jl")
 
 module GRU
