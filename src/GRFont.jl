@@ -1,6 +1,6 @@
 import FTFont
 
-type Font
+type Font <: Renderable
     font::FTFont.Font
     model::Model
     vertexType::DataType
