@@ -20,73 +20,73 @@ glUniform(index::GLint, value::Tuple{UInt32, UInt32, UInt32, UInt32}) = glUnifor
 nofunc(x...) = nothing
 
 macro notranspose(func)
-    quote
-        function (location::GLint, count::GLsizei, value::Ptr{GLfloat})
-            $func(location, count, GL_FALSE, value)
-        end
-    end
+	quote
+		function (location::GLint, count::GLsizei, value::Ptr{GLfloat})
+			$func(location, count, GL_FALSE, value)
+		end
+	end
 end
 
 const uniformFuncTable =
-    [glUniform1fv         nofunc                             nofunc                             nofunc                            ;
-     glUniform2fv         @notranspose(glUniformMatrix2fv)   @notranspose(glUniformMatrix3x2fv) @notranspose(glUniformMatrix4x2fv);
-     glUniform3fv         @notranspose(glUniformMatrix2x3fv) @notranspose(glUniformMatrix3fv)   @notranspose(glUniformMatrix4x3fv);
-     glUniform4fv         @notranspose(glUniformMatrix2x4fv) @notranspose(glUniformMatrix3x4fv) @notranspose(glUniformMatrix4fv)  ]
+	[glUniform1fv		 nofunc							 nofunc							 nofunc							;
+	 glUniform2fv		 @notranspose(glUniformMatrix2fv)   @notranspose(glUniformMatrix3x2fv) @notranspose(glUniformMatrix4x2fv);
+	 glUniform3fv		 @notranspose(glUniformMatrix2x3fv) @notranspose(glUniformMatrix3fv)   @notranspose(glUniformMatrix4x3fv);
+	 glUniform4fv		 @notranspose(glUniformMatrix2x4fv) @notranspose(glUniformMatrix3x4fv) @notranspose(glUniformMatrix4fv)  ]
 
 function get_uniform_func_float(rows::Int, cols::Int)
-    func = uniformFuncTable[rows, cols]
-    @assert func != nofunc
-    return func
+	func = uniformFuncTable[rows, cols]
+	@assert func != nofunc
+	return func
 end
 
 function glUniform(index::GLint, value::Vector{Float32})
-    glUniformFunc = get_uniform_func_float(length(value), 1)
-    glUniformFunc(index, one(GLsizei), convert(Ptr{Float32}, value))
+	glUniformFunc = get_uniform_func_float(length(value), 1)
+	glUniformFunc(index, one(GLsizei), convert(Ptr{Float32}, value))
 end
 
 function glUniform(index::GLint, value::Matrix{Float32})
-    rows, cols = size(value)
-    glUniformMatrixFunc = get_uniform_func_float(rows, cols)
-    glUniformMatrixFunc(index, one(GLsizei), convert(Ptr{Float32}, value))
+	rows, cols = size(value)
+	glUniformMatrixFunc = get_uniform_func_float(rows, cols)
+	glUniformMatrixFunc(index, one(GLsizei), convert(Ptr{Float32}, value))
 end
 
 function glUniform(index::GLint, value::Array{Float32, 3})
-    rows, cols, elements = size(value)
-    local glUniformFunc
-    glUniformFunc = get_uniform_func_float(rows, cols)
-    glUniformFunc(index, convert(GLsizei, elements), convert(Ptr{Float32}, value))
+	rows, cols, elements = size(value)
+	local glUniformFunc
+	glUniformFunc = get_uniform_func_float(rows, cols)
+	glUniformFunc(index, convert(GLsizei, elements), convert(Ptr{Float32}, value))
 end
 
 # todo: add glUniform for Vector{Int32 & UInt32}
 
 function gl_get_current_program()
-    currentProgram = GLint[0]
-    glGetIntegerv(GL_CURRENT_PROGRAM, currentProgram)
-    return currentProgram[1]
+	currentProgram = GLint[0]
+	glGetIntegerv(GL_CURRENT_PROGRAM, currentProgram)
+	return currentProgram[1]
 end
 
 function gl_clear_buffers(color, depth, stencil)
-    mask = 0
-    if color != nothing
-        glClearColor(color...)
-        mask |= GL_COLOR_BUFFER_BIT
-    end
-    if depth != nothing
-        glClearDepth(depth)
-        mask |= GL_DEPTH_BUFFER_BIT
-    end
-    if stencil != nothing
-        glClearStencil(stencil)
-        mask |= GL_STENCIL_BUFFER_BIT
-    end
-    glClear(mask)
+	mask = 0
+	if !isnull(color)
+		glClearColor(get(color)...)
+		mask |= GL_COLOR_BUFFER_BIT
+	end
+	if !isnull(depth)
+		glClearDepth(get(depth))
+		mask |= GL_DEPTH_BUFFER_BIT
+	end
+	if !isnull(stencil)
+		glClearStencil(get(stencil))
+		mask |= GL_STENCIL_BUFFER_BIT
+	end
+	glClear(mask)
 end
 
 function gl_info()
-    vendor = unsafe_string(glGetString(GL_VENDOR))
-    version = unsafe_string(glGetString(GL_VERSION))
-    renderer = unsafe_string(glGetString(GL_RENDERER))
-    info("OpenGL Vendor: $vendor, Version: $version, Renderer: $renderer")
+	vendor = unsafe_string(glGetString(GL_VENDOR))
+	version = unsafe_string(glGetString(GL_VERSION))
+	renderer = unsafe_string(glGetString(GL_RENDERER))
+	info("OpenGL Vendor: $vendor, Version: $version, Renderer: $renderer")
 end
 
 

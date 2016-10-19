@@ -6,8 +6,8 @@ export Vec2, Box, Rect
 export size, eltype, len, len2, min, max, isempty, union, intersect, zero, one, normalize, orthogonal, dot, rect, typemin, typemax
 
 immutable Vec2{T}
-    x::T
-    y::T
+	x::T
+	y::T
 end
 
 size{T}(::Type{Vec2{T}}) = (2,)
@@ -21,8 +21,8 @@ len2(v::Vec2) = v.x*v.x + v.y*v.y
 len(v::Vec2) = sqrt(len2(v))
 
 function normalize{T}(v::Vec2{T})
-    l = len(v)
-    l < eps(T) ? v : v / l
+	l = len(v)
+	l < eps(T) ? v : v / l
 end
 
 orthogonal(v::Vec2) = Vec2(v.y, -v.x)
@@ -60,8 +60,8 @@ max(v1::Vec2, v2::Vec2) = Vec2(max(v1.x, v2.x), max(v1.y, v2.y))
 max(v::Vec2, vs::Vec2...) = max(v, max(vs...))
 
 type Box{V}
-    min::V
-    max::V
+	min::V
+	max::V
 end
 
 size(b::Box) = b.max - b.min

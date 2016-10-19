@@ -19,9 +19,10 @@ abstract Renderable
 abstract Resource
 
 function init_resource(r::Resource, renderer::AbstractRenderer, id::Symbol)
-    r.renderer = renderer
-    r.id = id
-    add_renderer_resource(r)
+	r.renderer = renderer
+	r.id = id
+	add_renderer_resource(r)
+	finalizer(r, done)
 end
 
 getid(r::Resource) = r.id

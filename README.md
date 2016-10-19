@@ -1,4 +1,4 @@
-# GR
+# GRU
 
 [![Build Status](https://travis-ci.org/aaalexandrov/GR.jl.svg?branch=master)](https://travis-ci.org/aaalexandrov/GR.jl)
 
@@ -6,4 +6,4 @@
 
 [![codecov.io](http://codecov.io/github/aaalexandrov/GR.jl/coverage.svg?branch=master)](http://codecov.io/github/aaalexandrov/GR.jl?branch=master)
 
-GR - Julia Graphics Utility Package using OpenGL
+GRU - Julia Graphics Utility Package using OpenGL
