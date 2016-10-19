@@ -1,5 +1,3 @@
-empty_setup_material(model) = nothing
-
 type Shader <: Resource
 	program::GLuint
 	uniforms::Dict{Symbol, UniformVar}
@@ -15,7 +13,7 @@ end
 
 isvalid(shader::Shader) = shader.program != 0
 
-function init(shader::Shader, renderer::Renderer, path::AbstractString, setupMaterial::Function = empty_setup_material; id::Symbol = Symbol(path))
+function init(shader::Shader, renderer::Renderer, path::AbstractString, setupMaterial::Function = identity; id::Symbol = Symbol(path))
 	local vsSource, psSource
 	open(path * ".vert") do f
 		vsSource = read(f)
@@ -27,7 +25,7 @@ function init(shader::Shader, renderer::Renderer, path::AbstractString, setupMat
 	init(shader, renderer, pointer(vsSource), length(vsSource), pointer(psSource), length(psSource), setupMaterial, id = id)
 end
 
-function init(shader::Shader, renderer::Renderer, vs::Ptr{UInt8}, vsLength::Int, ps::Ptr{UInt8}, psLength::Int, setupMaterial::Function = empty_setup_material; id::Symbol = :shader)
+function init(shader::Shader, renderer::Renderer, vs::Ptr{UInt8}, vsLength::Int, ps::Ptr{UInt8}, psLength::Int, setupMaterial::Function = identity; id::Symbol = :shader)
 	@assert !isvalid(shader)
 
 	vertexShader = compileshader(GL_VERTEX_SHADER, vs, vsLength)
