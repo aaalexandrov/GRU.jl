@@ -190,25 +190,35 @@ function inituniforms(shader::Shader)
 
 	# set program so we can set sampler uniforms
 	glUseProgram(shader.program)
+	@assert glGetError() == GL_NO_ERROR
 	for i in 1:count
 		glGetActiveUniformName(shader.program, uniformIndices[i], length(nameBuf), C_NULL, nameBuf)
 		@assert glGetError() == GL_NO_ERROR
 
+		blockId = get_block_id(shader, uniformBlockIndices[i])
+		loc = -1
+		if blockId <= 0
+			loc = glGetUniformLocation(shader.program, nameBuf)
+			@assert glGetError() == GL_NO_ERROR
+			@assert loc >= 0
+		end
+
 		var = UniformVar(Symbol(unsafe_string(pointer(nameBuf))),
 						 gl2jltype(uniformTypes[i]),
-						 uniformIndices[i],
+						 loc,
 						 uniformOffsets[i],
 						 uniformArraySizes[i],
 						 uniformArrayStrides[i],
 						 uniformMatrixStrides[i],
-						 get_block_id(shader, uniformBlockIndices[i]))
+						 blockId)
 		shader.uniforms[var.name] = var
 
 		if var.varType <: SamplerType
 			push!(shader.samplers, var.name)
 			# set the sampler index once
-			# sampler index can only be set via glUniform1i so we convert to Int32 to dispatch to that function
-			glUniform(var.index, Int32(length(shader.samplers)))
+			# sampler index can only be set via glUniform1i
+			glUniform1i(var.location, length(shader.samplers))
+			@assert glGetError() == GL_NO_ERROR
 		end
 	end
 
@@ -276,7 +286,7 @@ function setuniform(shader::Shader, uniform::Symbol, value)
 	@assert gl_get_current_program() == shader.program
 
 	if haskey(shader.uniforms, uniform)
-		glUniform(shader.uniforms[uniform].index, value)
+		glUniform(shader.uniforms[uniform].location, value)
 		return true
 	end
 

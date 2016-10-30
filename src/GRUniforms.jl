@@ -58,7 +58,7 @@ end
 type UniformVar
 	name::Symbol
 	varType::DataType
-	index::GLint
+	location::GLint
 	offset::Int32
 	arraySize::Int32
 	arrayStride::Int32
