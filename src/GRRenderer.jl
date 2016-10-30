@@ -32,7 +32,7 @@ end
 function add_renderer_resource(resource::Resource)
 	renderer = resource.renderer
 	if haskey(renderer.resources, resource.id)
-		resource.id = symbol("$(resource.id)_$(object_id(resource))")
+		resource.id = Symbol("$(resource.id)_$(object_id(resource))")
 		@assert !haskey(renderer.resources, resource.id)
 	end
 	renderer.resources[resource.id] = WeakRef(resource)

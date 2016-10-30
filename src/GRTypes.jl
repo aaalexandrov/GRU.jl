@@ -1,4 +1,6 @@
-immutable Vec2
+abstract AbstractImmutableVector
+
+immutable Vec2 <: AbstractImmutableVector
 	x::Float32
 	y::Float32
 
@@ -6,7 +8,7 @@ immutable Vec2
 	Vec2(x, y) = new(x, y)
 end
 
-immutable Vec3
+immutable Vec3 <: AbstractImmutableVector
 	x::Float32
 	y::Float32
 	z::Float32
@@ -15,7 +17,7 @@ immutable Vec3
 	Vec3(x, y, z) = new(x, y, z)
 end
 
-immutable Vec4
+immutable Vec4 <: AbstractImmutableVector
 	x::Float32
 	y::Float32
 	z::Float32
@@ -61,6 +63,14 @@ immutable Matrix4 <: AbstractImmutableMatrix
 end
 
 import Base: size, eltype
+
+eltype{V<:AbstractImmutableVector}(::Type{V}) = Float32
+size(::Type{Vec2}) = (2,)
+size(::Type{Vec3}) = (3,)
+size(::Type{Vec4}) = (4,)
+
+isvector(t::DataType) = t <: AbstractImmutableVector
+size{T<:AbstractImmutableVector}(::Type{T}, i) = size(T)[i]
 
 eltype(::Type{Matrix3}) = Float32
 size(::Type{Matrix3}) = (3, 3)
@@ -141,10 +151,10 @@ end
 
 function set_array_fields{T}(vert::Vector{T}, fieldArrays::Dict{Symbol, Array})
 	for field in fieldnames(T)
-	  if haskey(fieldArrays, field)
-		set_array_field(vert, field, fieldArrays[field])
-	  else
-		info("GRU.set_array_fields(): Missing data for field $field")
-	  end
+		if haskey(fieldArrays, field)
+			set_array_field(vert, field, fieldArrays[field])
+		else
+			info("GRU.set_array_fields(): Missing data for field $field")
+		end
 	end
 end
