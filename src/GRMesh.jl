@@ -146,6 +146,7 @@ end
 function updatebuffers(mesh::Mesh, vertexRange::UnitRange, indexRange::UnitRange)
 	@assert isvalid(mesh)
 
+	apply(mesh.layout)
 	update_gl_buffer(GL_ARRAY_BUFFER, mesh.vbo, mesh.vertices, vertexRange)
 	update_gl_buffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo, mesh.indices, indexRange)
 end
