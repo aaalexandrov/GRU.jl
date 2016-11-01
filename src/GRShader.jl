@@ -296,7 +296,7 @@ end
 
 function setuniform(shader::Shader, uniform::Symbol, tex::AbstractTexture)
 	@assert isvalid(shader)
-	@assert gl_get_current_program() == shader.program
+	# @assert gl_get_current_program() == shader.program
 	@assert isvalid(tex)
 
 	texIndex = get_sampler_index(shader, uniform)

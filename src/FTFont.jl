@@ -1,7 +1,7 @@
 module FTFont
 
 using FreeType
-using Math2D
+using GRU.Math2D
 
 type Glyph
 	char::Char

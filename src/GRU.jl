@@ -1,18 +1,18 @@
 __precompile__()
 
+module GRU
+
 include("GLHelper.jl")
 include("Shapes.jl")
 include("Math2D.jl")
 include("Math3D.jl")
 include("FTFont.jl")
 
-module GRU
-
 using ModernGL
-using GLHelper
+using .GLHelper
 
 import DevIL
-import Shapes
+import .Shapes
 
 abstract AbstractRenderer
 abstract Renderable

@@ -1,4 +1,4 @@
-import FTFont
+import .FTFont
 
 type Font <: Renderable
 	font::FTFont.Font
