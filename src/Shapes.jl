@@ -1,9 +1,9 @@
 module Shapes
 
-import Base: similar, max, min
+import Base: similar, max, min, union!, empty!, isempty
 
-export Shape, Space, Line, Plane, Sphere, AABB, Convex
-export isvalid, getnormal, getpoint, volume, addpoint, setplane, getintersection, intersect, outside, similar, min, max, inside
+export Shape, Empty, Space, Line, Plane, Sphere, AABB, Convex
+export isvalid, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside
 
 
 iszero{T}(x::T) = abs(x) < eps(T)
@@ -72,13 +72,26 @@ end
 abstract Shape{T <: Real}
 
 similar{S <: Shape}(s::S) = S()
+function transform{S <: Shape}(m::Matrix, s::S)
+	dst = similar(s)
+	transform(dst, m, s)
+	dst
+end
+
+# empty shape
+type Empty{T} <: Shape{T}
+end
+
+isvalid(e::Empty) = true
+volume{T}(e::Empty{T}) = zero(T)
+transform(eDest::Empty, m::Matrix, e::Empty) = nothing
 
 # all space
-type Space <: Shape
+type Space{T} <: Shape{T}
 end
 
 isvalid(s::Space) = true
-
+volume{T}(s::Space{T}) = T(Inf)
 transform(sDest::Space, m::Matrix, s::Space) = nothing
 
 
@@ -149,10 +162,16 @@ end
 Sphere{T}(cx::T, cy, cz, r) = Sphere{T}(T[cx, cy, cz], convert(T, r))
 Sphere(c, z) = Sphere(c..., z)
 
-isvalid{T}(s::Sphere{T}) = size(s.c) == (3,) && s.r >= zero(T)
+isvalid{T}(s::Sphere{T}) = size(s.c) == (3,) && !isempty(s)
 volume(s::Sphere) = s.r^3*4pi/3
+isempty{T}(s::Sphere{T}) = s.r < zero(T)
 
-function addpoint{T}(s::Sphere{T}, p::Vector{T})
+function empty!{T}(s::Sphere{T})
+	s.r = -Inf
+	s
+end
+
+function union!{T}(s::Sphere{T}, p::Vector{T})
 	@assert isvalid(s)
 	@assert length(p) == 3
 
@@ -161,7 +180,24 @@ function addpoint{T}(s::Sphere{T}, p::Vector{T})
 		s.r = (d+s.r)/2
 		s.c = lerp(p, s.c, s.r/d)
 	end
-	nothing
+	s
+end
+
+function union!{T}(s1::Sphere{T}, s2::Sphere{T})
+	c12 = s2.c - s1.c
+	d = norm(c12)
+	if s1.r >= d + s2.r
+		# s1 is the union, nothing needs changing
+	elseif s2.r >= d + s1.r
+		# s2 is the union
+		s1.c[:] = s2.c
+		s1.r = s2.r
+	else
+		d1 = (d + s2.r - s1.r) / 2
+		s1.c += c12 * (d1 / d)
+		s1.r += d1
+	end
+	s1
 end
 
 function transform{T}(sDest::Sphere{T}, m::Matrix{T}, s::Sphere{T})
@@ -180,9 +216,17 @@ end
 
 AABB{T}(xmin::T, ymin, zmin, xmax, ymax, zmax) = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
 AABB(pmin, pmax) = AABB(pmin..., pmax...)
+AABB(s::Sphere) = AABB(s.c-s.r, s.c+s.r)
 
-isvalid{T}(aabb::AABB{T}) = size(aabb.p) == (3, 2) && aabb.p[1, 1] <= aabb.p[1, 2] && aabb.p[2, 1] <= aabb.p[2, 2] && aabb.p[3, 1] <= aabb.p[3, 2]
-volume(ab::AABB) = prod([ab.p[i, 2] - ab.p[i, 1] for i=1:3])
+isvalid{T}(aabb::AABB{T}) = size(aabb.p) == (3, 2) && !isempty(aabb)
+volume(ab::AABB) = prod(ab.p[i, 2] - ab.p[i, 1] for i=1:3)
+isempty{T}(ab::AABB{T}) = ab.p[1, 1] > ab.p[1, 2] || ab.p[2, 1] > ab.p[2, 2] || ab.p[3, 1] > ab.p[3, 2]
+
+function empty!{T}(ab::AABB{T})
+	ab.p[:, 1] = Inf
+	ab.p[:, 2] = -Inf
+	ab
+end
 
 min{T}(ab::AABB{T}) = ab.p[:, 1]
 max{T}(ab::AABB{T}) = ab.p[:, 2]
@@ -202,7 +246,14 @@ function addpoint!{T}(minMax::Matrix{T}, p::Vector{T})
 	nothing
 end
 
-addpoint{T}(ab::AABB{T}, p::Vector{T}) = addpoint!(ab.p, p)
+union!{T}(ab::AABB{T}, p::Vector{T}) = addpoint!(ab.p, p)
+function union!{T}(ab1::AABB{T}, ab2::AABB{T})
+	for i = 1:3
+		ab1.p[i, 1] = min(ab1.p[i, 1], ab2.p[i, 1])
+		ab1.p[i, 2] = max(ab1.p[i, 2], ab2.p[i, 2])
+	end
+	ab1
+end
 
 function transform{T}(abDest::AABB{T}, m::Matrix{T}, ab::AABB{T})
 	t = Array(T, 3)
@@ -339,12 +390,12 @@ intersect{T}(l::Line{T}, ab::AABB{T}) = !isnan(getintersection(l, ab)[1])
 intersect(ab::AABB, l::Line) = intersect(l, ab)
 
 function getintersection{T}(ab1::AABB{T}, ab2::AABB{T})
-  result = AABB{T}()
-  for i = 1:3
-	result.p[i, 1] = max(ab1.p[i, 1], ab2.p[i, 1])
-	result.p[i, 2] = min(ab1.p[i, 2], ab2.p[i, 2])
-  end
-  return result
+	result = AABB{T}()
+	for i = 1:3
+		result.p[i, 1] = max(ab1.p[i, 1], ab2.p[i, 1])
+		result.p[i, 2] = min(ab1.p[i, 2], ab2.p[i, 2])
+	end
+	return result
 end
 
 intersect{T}(ab1::AABB{T}, ab2::AABB{T}) = isvalid(getintersection(ab1, ab2))
@@ -380,6 +431,7 @@ end
 intersect(p1::Plane, p2::Plane) = getintersection(p1, p2) != nothing
 
 
+outside(c::Convex, e::Empty) = true
 outside(c::Convex, s::Space) = false
 
 function outside{T}(c::Convex{T}, s::Sphere{T})
@@ -408,29 +460,28 @@ function outside{T}(c::Convex{T}, ab::AABB{T})
 	return false
 end
 
-
 function inside{T}(enclosing::AABB{T}, ab::AABB{T})
-  @assert size(enclosing.p) == (3,2)
-  @assert size(ab.p) == (3,2)
+	@assert size(enclosing.p) == (3,2)
+	@assert size(ab.p) == (3,2)
 
-  @simd for i = 1:3
-	@inbounds if enclosing.p[i,1] > ab.p[i,1] || enclosing.p[i,2] < ab.p[i,2]
-	  return false
+	@simd for i = 1:3
+		@inbounds if enclosing.p[i,1] > ab.p[i,1] || enclosing.p[i,2] < ab.p[i,2]
+			return false
+		end
 	end
-  end
-  return true
+	return true
 end
 
 function inside{T}(enclosing::AABB{T}, p::Vector{T})
-  @assert size(enclosing.p) == (3,2)
-  @assert size(p) == (3,)
+	@assert size(enclosing.p) == (3,2)
+	@assert size(p) == (3,)
 
-  @simd for i = 1:3
-	@inbounds if !(enclosing.p[i,1] <= p[i] <= enclosing.p[i,2])
-	  return false
+	@simd for i = 1:3
+		@inbounds if !(enclosing.p[i,1] <= p[i] <= enclosing.p[i,2])
+			return false
+		end
 	end
-  end
-  return true
+	return true
 end
 
 end

@@ -117,8 +117,8 @@ function initbound(mesh::Mesh, vertex2point::Function)
 	box = Shapes.AABB(p, p)
 	for i = 2:length(mesh.vertices)
 		p = vertex2point(mesh.vertices[i])
-		Shapes.addpoint(sphere, p)
-		Shapes.addpoint(box, p)
+		Shapes.union!(sphere, p)
+		Shapes.union!(box, p)
 	end
 	mesh.bound = Shapes.volume(box) < Shapes.volume(sphere) ? box : sphere
 end

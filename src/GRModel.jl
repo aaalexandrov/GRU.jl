@@ -26,6 +26,12 @@ function getbound(model::Model)
 	model.bound
 end
 
+function setbound(model::Model, bound::Shapes.Shape)
+	@assert isvalid(model)
+	model.bound = bound
+	model.boundDirty = false
+end
+
 function render(model::Model, renderer::Renderer)
 	@assert isvalid(model)
 	model.material.shader.setupMaterial(model)
