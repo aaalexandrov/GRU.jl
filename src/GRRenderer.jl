@@ -64,6 +64,7 @@ function render_frame(renderer::Renderer)
 	# cull
 	frustum = getfrustum(renderer.camera)
 	filter!(r->!Shapes.outside(frustum, getbound(r)), renderer.toRender)
+	#filter!(r->Shapes.intersect(frustum, getbound(r)), renderer.toRender)
 	# sort
 	if renderer.sortFunc != identity
 		sort!(renderer.toRender, lt = renderer.sortFunc)

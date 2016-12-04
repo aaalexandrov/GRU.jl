@@ -53,8 +53,12 @@ function transform_p4{T}(result::AbstractArray{T, 2}, m::AbstractArray{T, 2}, p:
 end
 
 make_interval(a, b) = a < b ? (a, b) : (b, a)
-empty_interval(i) = i[1] > i[2]
+empty_interval(i) = !(i[1] <= i[2]) # Will return true in case one of the values is NaN
+infinite_interval(i) = isinf(i[1]) || isinf(i[2])
 intersect_interval(min1, max1, min2, max2) = (max(min1, min2), min(max1, max2))
+intersect_interval(i1, i2) = intersect_interval(i1[1], i1[2], i2[1], i2[2])
+is_intersecting_interval(i1, i2) = i1[2] >= i2[1] && i1[1] <= i2[2] # will return false if either interval contains a NaN
+
 
 # roots of ax^2+bx+c=0
 function quadroots(a, b, c)
@@ -66,6 +70,46 @@ function quadroots(a, b, c)
 	x1 = (-b-sd)/2a
 	x2 = (-b+sd)/2a
 	return x1, x2
+end
+
+planevalue{T}(p::Vector{T}, point::Vector{T}) = dot(p[1:3], point) + p[4]
+planenormal{T}(p::Vector{T}) = p[1:3]
+function planepoint{T}(p::Vector{T})
+	i = indmax(abs(p[i]) for i=1:3)
+	return T[x==i ? -p[4]/p[i] : 0 for x=1:3]
+end
+
+function normalized_plane(dst, col, n, p)
+	invLen = 1 / norm(n)
+	dst[1, col] = n[1] * invLen
+	dst[2, col] = n[2] * invLen
+	dst[3, col] = n[3] * invLen
+	dst[4, col] = -dot(p, n) * invLen
+	nothing
+end
+
+function set_aabb_planes{T}(dst::Matrix{T}, ptMin::Vector{T}, ptMax::Vector{T})
+	normalized_plane(dst, 1, T[ 1,  0,  0], ptMin)
+	normalized_plane(dst, 2, T[ 0,  1,  0], ptMin)
+	normalized_plane(dst, 3, T[ 0,  0,  1], ptMin)
+	normalized_plane(dst, 4, T[-1,  0,  0], ptMax)
+	normalized_plane(dst, 5, T[ 0, -1,  0], ptMax)
+	normalized_plane(dst, 6, T[ 0,  0, -1], ptMax)
+end
+
+function normalize_plane(dst, col)
+	invLen = 1 / len(dst[1, col], dst[2, col], dst[3, col])
+	dst[1, col] *= invLen
+	dst[2, col] *= invLen
+	dst[3, col] *= invLen
+	dst[4, col] *= invLen
+	nothing
+end
+
+function normalize_planes{T}(planes::Matrix{T})
+	for i = 1:size(planes, 2)
+		normalize_plane(planes, i)
+	end
 end
 
 
@@ -102,12 +146,30 @@ type Line{T} <: Shape{T}
 	Line() = new(Array(T, 3, 2))
 end
 
-Line{T}(x1::T, y1, z1, x2, y2, z2) = Line{T}(T[x1 x2; y1 y2; z1 z2])
+function Line{T}(x1::T, y1, z1, x2, y2, z2)
+	p = Array{T}(3, 2)
+	p[1,1] = x1
+	p[2,1] = y1
+	p[3,1] = z1
+	p[1,2] = x2
+	p[2,2] = y2
+	p[3,2] = z2
+	Line{T}(p)
+end
+
 Line(p0, p1) = Line(p0..., p1...)
+Line{T}(v1::Vector{T}, v2::Vector{T}) = Line(v1[1], v1[2], v1[3], v2[1], v2[2], v2[3])
 
-isvalid{T}(l::Line{T}) = size(l.p)==(3, 2) && len2(l.p[:, 1] - l.p[:, 2]) >= eps(T)
+isvalid{T}(l::Line{T}) = size(l.p)==(3, 2) && len2(l.p[1, 2] - l.p[1, 1], l.p[2, 2] - l.p[2, 1], l.p[3, 2] - l.p[3, 1]) >= eps(T)
 
-getvector{T}(l::Line{T}) = l.p[:, 2] - l.p[:, 1]
+function getvector{T}(l::Line{T})
+	v = Vector{T}(3)
+	v[1] = l.p[1, 2] - l.p[1, 1]
+	v[2] = l.p[2, 2] - l.p[2, 1]
+	v[3] = l.p[3, 2] - l.p[3, 1]
+	v
+end
+
 getpoint{T}(l::Line{T}, t::T) = lerp(l.p[:, 1], l.p[:, 2], t)
 
 function transform{T}(lDest::Line{T}, m::Matrix{T}, l::Line{T})
@@ -117,6 +179,27 @@ function transform{T}(lDest::Line{T}, m::Matrix{T}, l::Line{T})
 		end
 	end
 	nothing
+end
+
+function plane2interval{T}(p::Vector{T}, l::Line{T}, interval::Tuple{T, T} = (T(-Inf), T(Inf)))
+	@assert isvalid(l)
+	@assert size(p) == (4,)
+
+	int = line2plane(l.p, p)
+	if !isinf(int)
+		# line doesn't lie on the plane
+		if isnan(int)
+			# line is parallel to the plane
+			if planevalue(p, l.p[:, 1]) < zero(T)
+				# and on the negative side
+				interval = (T(Inf), T(-Inf))
+			end
+		else
+			rayInterval = dot(planenormal(p), getvector(l)) < 0? (T(-Inf), int) : (int, T(Inf))
+			interval = intersect_interval(interval, rayInterval)
+		end
+	end
+	interval
 end
 
 
@@ -132,13 +215,9 @@ Plane(n, p) = Plane(n..., -dot(p, n))
 
 isvalid{T}(p::Plane{T}) = size(p.p) == (4,) && len2(p.p[1:3]) >= eps(T)
 
-getnormal{T}(p::Plane{T}) = p.p[1:3]
-getvalue{T}(p::Plane{T}, point::Vector{T}) = dot(p.p[1:3], point[1:3]) + p.p[4]
-
-function getpoint{T}(p::Plane{T})
-	i = indmax(p.p[1:3])
-	return T[x==i ? -p.p[4]/p.p[i] : 0 for x=1:3]
-end
+getnormal{T}(p::Plane{T}) = planenormal(p.p)
+getvalue{T}(p::Plane{T}, point::Vector{T}) = planevalue(p.p, point)
+getpoint{T}(p::Plane{T}) = planepoint(p.p)
 
 # multiply plane by inverse transpose of matrix
 function transform{T}(pDest::Plane{T}, m::Matrix{T}, p::Plane{T})
@@ -285,12 +364,155 @@ end
 # todo: add Capsule and OBB
 
 
+type EdgeInfo{T <: Real}
+	line::Line{T}
+	interval::Tuple{T, T}
+end
+
+type Adjacency{T <: Real}
+	faces::Vector{Vector{Int}}
+	edges::Dict{Tuple{Int, Int}, EdgeInfo{T}}
+	Adjacency() = new()
+end
+
+isvalid(a::Adjacency) = isdefined(a, :faces) && isdefined(a, :edges)
+
+function init{T}(adj::Adjacency{T}, planes::Matrix{T})
+	adj.faces = [Int[] for i=1:size(planes, 2)]
+	adj.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
+	calcedges(adj, planes)
+end
+
+function init{T}(adj::Adjacency{T}, ab::AABB{T})
+	adj.faces = [filter(j->i != j != (i+3-1)%6+1, 1:6) for i=1:6]
+	adj.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
+
+	sz = ab.p[:, 2] - ab.p[:, 1]
+	for i = 1:6, j in adj.faces[i]
+		iDir = (i-1)%3+1
+		if i < j
+			jDir = (j-1)%3+1
+			pts = Array{T}(3, 2)
+			for k = 1:3
+				m = 1
+				d = 0
+				if k == iDir
+					m = (i > 3) + 1
+				elseif k == jDir
+					m = (j > 3) + 1
+				else
+					d = sz[k]
+				end
+				pts[k, 1] = ab.p[k, m]
+				pts[k, 2] = pts[k, 1] + d
+			end
+			l = Line{T}(pts)
+			int = (T(0), T(1))
+			adj.edges[(i, j)] = EdgeInfo(l, int)
+		end
+	end
+end
+
+function combine{T}(dst::Adjacency{T}, src1::Adjacency{T}, src2::Adjacency{T}, planes::Matrix{T})
+	@assert isvalid(src1)
+	@assert isvalid(src2)
+	@assert size(planes, 2) == length(src1.faces) + length(src2.faces)
+
+	dst.faces = deepcopy(src1.faces)
+	dst.edges = deepcopy(src2.edges)
+
+	src2Base = length(src1.faces)
+	for f in src2.faces
+		push!(dst.faces, map(i->i+src2Base, f))
+	end
+	for (f, e) in src2.edges
+		dst.edges[(f[1] + src2Base, f[2] + src2Base)] = e
+	end
+
+	calcedges(dst, planes, src2Base)
+end
+
+function calcedges{T}(adj::Adjacency{T}, planes::Matrix{T}, splitLength::Int = 0)
+	@assert size(planes, 1) == 4
+
+	cols = size(planes, 2)
+	iRange = 1:(splitLength == 0? cols : splitLength)
+	for i = iRange
+		pi = Plane{T}(planes[:, i])
+		jRange = (splitLength == 0? i+1 : splitLength+1):cols
+		for j = i+1:cols
+			pj = Plane{T}(planes[:, j])
+			intersection = getintersection(pi, pj)
+			if isa(intersection, Line)
+				interval = (T(-Inf), T(Inf))
+				for k = 1:cols
+					if k != i && k != j
+						interval = plane2interval(planes[:, k], intersection, interval)
+						empty_interval(interval) && break
+					end
+				end
+				if !empty_interval(interval)
+					adj.edges[(i, j)] = EdgeInfo(intersection, interval)
+					push!(adj.faces[i], j)
+					push!(adj.faces[j], i)
+				end
+			end
+		end
+	end
+	adj
+end
+
+function select_planes{T}(adj::Adjacency{T}, keep::Vector{Bool})
+	@assert length(adj.faces) == length(keep)
+	ind = Vector{T}(length(keep))
+	nextInd = 1
+	for i = 1:length(ind)
+		if keep[i]
+			ind[i] = nextInd
+			nextInd += 1
+		else
+			ind[i] = 0
+		end
+	end
+	adj.faces = adj.faces[keep]
+	for i = 1:length(adj.faces)
+		filter!(f->keep[f], adj.faces[i])
+		map!(f->ind[f], adj.faces[i])
+	end
+	edges = adj.edges
+	adj.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
+	for (f, e) in edges
+		if keep[f[1]] && keep[f[2]]
+			adj.edges[(ind[f[1]], ind[f[2]])] = e
+		end
+	end
+end
+
+function transform{T}(dst::Adjacency{T}, m::Matrix{T}, src::Adjacency{T})
+	dst.faces = deepcopy(src.faces)
+	if !isdefined(dst.edges)
+		dst.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
+	else
+		empty!(dst.edges)
+	end
+	for (f, e) in src.edges
+		lDst = Line{T}()
+		transform(lDst, m, e.line)
+		dst.edges[f] = EdgeInfo(lDst, e.interval)
+	end
+	nothing
+end
+
 type Convex{T} <: Shape{T}
 	planes::Array{T, 2}
+	adj::Adjacency{T}
+
+	Convex(planes::Matrix{T}) = new(planes, Adjacency{T}())
 end
-# todo: add edges and vertices and intersection functions
 
 Convex{T}(::Type{T}, planeCount::Int) = Convex{T}(zeros(T, 4, planeCount))
+Convex{T}(c1::Convex{T}, c2::Convex{T}) = combine(Convex(T, size(c1.planes, 2) + size(c2.planes, 2)), c1, c2)
+Convex{T}(ab::AABB{T}) = set(Convex{T}(Array{T}(4, 6)), ab)
 
 function Convex{T}(planes::Plane{T}...)
 	c = Convex(T, length(planes))
@@ -302,8 +524,78 @@ end
 
 isvalid{T}(c::Convex{T}) = size(c.planes, 1) == 4 && size(c.planes, 2) > 0
 setplane{T}(c::Convex{T}, planeIndex::Int, p::Vector{T}) = c.planes[:, planeIndex] = p / len(p[1:3])
+isclosed{T}(c::Convex{T}) = !(isempty(c.edges) || any(e->infinite_interval(e.interval), values(c.edges)))
 
-transform{T}(cDest::Convex{T}, m::Matrix{T}, c::Convex{T}) = transform_it(cDest, transpose(inv(m)), c)
+function isempty{T}(c::Convex{T})
+	@assert(isvalid(c))
+	@assert(isvalid(c.adj))
+	!isempty(c.planes) && isempty(c.adj.edges)
+end
+
+function set{T}(c::Convex{T}, ab::AABB{T})
+	@assert size(c.planes) == (4, 6)
+	set_aabb_planes(c.planes, ab.p[:, 1], ab.p[:, 2])
+	init(c.adj, ab)
+	c
+end
+
+function combine{T}(dst::Convex{T}, src1::Convex{T}, src2::Convex{T})
+	src1Size = size(src1.planes, 2)
+	src2Size = size(src2.planes, 2)
+	if size(dst.planes, 2) != src1Size + src2Size
+		dsp.planes = Array{T}(4, src1Size + src2Size)
+	end
+	dst.planes[:, 1:src1Size] = src1.planes
+	dst.planes[:, src1Size+1:src1Size+src2Size] = src2.planes
+	combine(dst.adj, src1.adj, src2.adj, dst.planes)
+	dst
+end
+
+function calcedges{T}(c::Convex{T})
+	@assert isvalid(c)
+	normalize_planes(c.planes)
+	init(c.adj, c.planes)
+end
+
+function select_planes{T}(c::Convex{T}, keep::Vector{Bool})
+	c.planes = c.planes[:, keep]
+	select_planes(c.adj, keep)
+end
+
+function remove_redundant{T}(c::Convex{T})
+	@assert isvalid(c)
+	@assert isvalid(c.adj)
+
+	cols = size(c.planes, 2)
+	keep = [true for i=1:cols]
+	if isempty(c.adj.edges)
+		for i = 1:cols, j = i+1:cols
+			if keep[i] && keep[j] && iszero(dot(planenormal(c.planes[:, i]), planenormal(c.planes[:, j])) - 1)
+				# planes are parallel, one of them is redundant
+				jInFront = planevalue(c.planes[:, j], planepoint(c.planes[:, i])) < 0
+				keep[i] = !jInFront
+				keep[j] = jInFront
+			end
+		end
+	else
+		for i = 1:cols
+			# plane does not form a common edge with any plane if it's redundant
+			keep[i] = !isempty(c.adj.faces[i])
+		end
+	end
+	if !all(keep)
+		# we're actually removing planes
+		select_planes(adj, keep)
+	end
+end
+
+function transform{T}(cDest::Convex{T}, m::Matrix{T}, c::Convex{T})
+	transform_it(cDest, transpose(inv(m)), c)
+	if isvalid(c.adj)
+		transform(cDest.adj, m, c.adj)
+	end
+	nothing
+end
 
 function transform_it{T}(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T})
 	cols = size(c.planes, 2)
@@ -324,17 +616,23 @@ end
 
 # Intersection functions
 
-function getintersection{T}(l::Line{T}, p::Plane{T})
-	@assert isvalid(l)
-	@assert isvalid(p)
+getintersection{T}(s1::Shape{T}, s2::Shape{T}) = getintersection(s2, s1)
+intersect{T}(s1::Shape{T}, s2::Shape{T}) = intersect(s2, s1)
 
-	lo = l.p[:, 1]
-	lv = l.p[:, 2] - lo
-	pn = getnormal(p)
-	po = getpoint(p)
+function line2plane{T}(l::Matrix{T}, plane::Vector{T})
+	lv = Vector{T}(3)
+	lv[1] = l[1, 2] - l[1, 1]
+	lv[2] = l[2, 2] - l[2, 1]
+	lv[3] = l[3, 2] - l[3, 1]
+	pn = planenormal(plane)
+	po = planepoint(plane)
+	pl = Vector{T}(3)
+	pl[1] = po[1] - l[1, 1]
+	pl[2] = po[2] - l[2, 1]
+	pl[3] = po[3] - l[3, 1]
 
 	vn = dot(lv, pn)
-	d = dot(po-lo, pn)
+	d = dot(pl, pn)
 	if iszero(vn)
 		# line and plane are parallel
 		return iszero(d) ? T(Inf) : T(NaN)
@@ -343,8 +641,13 @@ function getintersection{T}(l::Line{T}, p::Plane{T})
 	return d / vn
 end
 
+function getintersection{T}(l::Line{T}, p::Plane{T})
+	@assert isvalid(l)
+	@assert isvalid(p)
+	line2plane(l.p, p.p)
+end
+
 intersect{T}(l::Line{T}, p::Plane{T}) = !isnan(getintersection(l, p))
-intersect(p::Plane, l::Line) = intersect(l, p)
 
 
 function getintersection{T}(l::Line{T}, s::Sphere{T})
@@ -357,15 +660,14 @@ function getintersection{T}(l::Line{T}, s::Sphere{T})
 	return quadroots(dot(vo, vo), 2dot(vo, co), dot(co, co)-s.r*s.r)
 end
 
-intersect{T}(l::Line{T}, s::Sphere{T}) = !isnan(getintersection(l, s)[1])
-intersect(s::Sphere, l::Line) = intersect(l, s)
+intersect{T}(l::Line{T}, s::Sphere{T}) = !empty_interval(getintersection(l, s))
 
 
 function getintersection{T}(l::Line{T}, ab::AABB{T})
 	@assert isvalid(l)
 	@assert isvalid(ab)
 
-	tInt = (-inf(T), inf(T))
+	tInt = (T(-Inf), T(Inf))
 	for i = 1:3
 		lo = l.p[i, 1]
 		d = l.p[i, 2] - lo
@@ -374,20 +676,18 @@ function getintersection{T}(l::Line{T}, ab::AABB{T})
 			if ab.p[i, 1] <= lo <= ab.p[i, 2]
 				continue
 			else
-				return T(NaN), T(NaN)
+				tInt = (T(Inf), T(-Inf))
+				break
 			end
 		end
 		dimInt = make_interval((ab.p[i, 1] - lo)/d, (ab.p[i, 2] - lo)/d)
 		tInt = intersect_interval(tInt, dimInt)
-		if empty_interval(tInt)
-			return T(NaN), T(NaN)
-		end
+		empty_interval(tInt) && break
 	end
-	return tInt
+	tInt
 end
 
-intersect{T}(l::Line{T}, ab::AABB{T}) = !isnan(getintersection(l, ab)[1])
-intersect(ab::AABB, l::Line) = intersect(l, ab)
+intersect{T}(l::Line{T}, ab::AABB{T}) = !empty_interval(getintersection(l, ab))
 
 function getintersection{T}(ab1::AABB{T}, ab2::AABB{T})
 	result = AABB{T}()
@@ -429,6 +729,93 @@ function getintersection{T}(p1::Plane{T}, p2::Plane{T})
 end
 
 intersect(p1::Plane, p2::Plane) = getintersection(p1, p2) != nothing
+
+
+intersect(c::Convex, e::Empty) = false
+intersect(c::Convex, s::Space) = isvalid(c)
+
+function getintersection{T}(c::Convex{T}, l::Line{T}, interval::Tuple{T, T} = (T(-Inf), T(Inf)))
+	@assert isvalid(l)
+	@assert isvalid(c)
+
+	for i = 1:size(c.planes, 2)
+		interval = plane2interval(c.planes[:, i], l, interval)
+		empty_interval(interval) && break
+	end
+	interval
+end
+
+intersect(c::Convex, l::Line) = !empty_interval(getintersection(c, l))
+
+function getintersection{T}(c::Convex{T}, p::Plane{T})
+	c = Convex{T}(hcat(c.planes, p.p))
+	calcedges(c)
+	remove_redundant(c)
+	c
+end
+
+intersect(c::Convex, p::Plane) = !isempty(getintersection(c, p))
+
+
+function intersect{T}(c::Convex{T}, s::Sphere{T})
+	@assert isvalid(c)
+	@assert isvalid(c.adj)
+	@assert isvalid(s)
+
+	cols = size(c.planes, 2)
+	incidentPlanes = Int[]
+	for i = 1:cols
+		dist = planevalue(c.planes[:, 4], s.c)
+		dist < -s.r && return false
+		if dist <= s.r
+			push!(incidentPlanes, i)
+		end
+	end
+	# if the sphere isn't intersected by any of the planes, and is not wholly on the negative side of any of them, it's inside
+	isempty(incidentPlanes) && return true
+	for i in incidentPlanes
+		plane = c.planes[:, i]
+		pn = planenormal(plane)
+		po = planepoint(plane)
+		projCenter = s.c - pn * dot(s.c - po, pn) # sphere center projected on the plane
+		@assert iszero(planevalue(plane, projCenter))
+		centerIsInside = true
+		for j in c.adj.faces[i]
+			# planes with indices i and j have a common edge so they are incident, check if the projected center is on the positive side of j
+			if planevalue(c.planes[j], projCenter) < 0
+				centerIsInside = false
+				break
+			end
+		end
+		# the projection of the center on the plane is inside the area defined by the incident planes of the convex
+		centerIsInside && return true
+	end
+	# the sphere is incident with some planes, but its center projected on any of them doesn't lie inside a convex face
+	# in this case the sphere intersects the convex only if one of the convex edges intersects the sphere
+	# and the only edges the sphere can intersect are those formed between pairs of incident planes
+	for i = 1:length(incidentPlanes), j = i+1:length(incidentPlanes)
+		planePair = (incidentPlanes[i], incidentPlanes[j])
+		if haskey(c.adj.edges, planePair)
+			edge = c.adj.edges[planePair]
+			interval = getintersection(edge.line, s)
+			# do the line's edge interval and sphere interval intersect?
+			is_intersecting_interval(interval, edge.interval) && return true
+		end
+	end
+	return false
+end
+
+getintersection{T}(c::Convex{T}, ab::AABB{T}) = getintersection(c, Convex(ab))
+intersect{T}(c::Convex{T}, ab::AABB{T}) = !isempty(getintersection(c, ab))
+
+
+function getintersection{T}(c1::Convex{T}, c2::Convex{T})
+	c = Convex(c1, c2)
+	remove_redundant(c)
+	c
+end
+
+intersect(c1::Convex, c2::Convex) = !isempty(getintersection(c1, c2))
 
 
 outside(c::Convex, e::Empty) = true
@@ -482,6 +869,23 @@ function inside{T}(enclosing::AABB{T}, p::Vector{T})
 		end
 	end
 	return true
+end
+
+function inside{T}(enclosing::Sphere{T}, p::Vector{T})
+	@assert size(enclosing.c) == (3,)
+	@assert size(p) == (3,)
+
+	len(p - enclosing.c) <= enclosing.r
+end
+
+function inside{T}(enclosing::Convex{T}, p::Vector{T})
+	@assert isvalid(enclosing)
+	@assert size(p) == (3,)
+
+	for i = 1:size(enclosing.planes, 2)
+		planevalue(enclosing.planes[:, i], p) < 0 && return false
+	end
+	true
 end
 
 end
