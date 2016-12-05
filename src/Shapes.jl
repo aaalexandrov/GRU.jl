@@ -413,6 +413,56 @@ function init{T}(adj::Adjacency{T}, ab::AABB{T})
 	end
 end
 
+function addplane{T}(adj::Adjacency{T}, planes::Matrix{T}, index::Int, planeRange::Range{Int} = 1:index-1)
+	@assert isvalid(adj)
+	@assert size(planes, 1) == 4
+
+	p = Plane{T}(planes[:, index])
+	update_edges(adj, p, planeRange)
+	for i = planeRange
+		pi = Plane{T}(planes[:, i])
+		intersection = getintersection(p, pi)
+		if isa(intersection, Line)
+			interval = (T(-Inf), T(Inf))
+			for k = planeRange
+				if k != i
+					interval = plane2interval(planes[:, k], intersection, interval)
+					empty_interval(interval) && break
+				end
+			end
+			if !empty_interval(interval)
+				f1 = min(i, index)
+				f2 = max(i, index)
+				adj.edges[(f1, f2)] = EdgeInfo(intersection, interval)
+				push!(adj.faces[f1], f2)
+				push!(adj.faces[f2], f1)
+			end
+		end
+	end
+end
+
+function update_edges{T}(adj::Adjacency{T}, p::Plane{T}, planeRange::Range{Int})
+	for i in planeRange
+		k = 1
+		while k < length(adj.faces[i])
+			j = adj.faces[i][k]
+			if j > i && j in planeRange
+				e = adj.edges[(i, j)]
+				interval = plane2interval(p.p, e.line, e.interval)
+				if empty_interval(interval)
+					deleteat!(adj.faces[i], k)
+					deleteat!(adj.faces[j], findfirst(adj.faces[j], i))
+					delete!(adj.edges, (i, j))
+					continue
+				else
+					e.interval = interval
+				end
+			end
+			k += 1
+		end
+	end
+end
+
 function combine{T}(dst::Adjacency{T}, src1::Adjacency{T}, src2::Adjacency{T}, planes::Matrix{T})
 	@assert isvalid(src1)
 	@assert isvalid(src2)
@@ -436,6 +486,20 @@ function calcedges{T}(adj::Adjacency{T}, planes::Matrix{T}, splitLength::Int = 0
 	@assert size(planes, 1) == 4
 
 	cols = size(planes, 2)
+	range1 = 1:splitLength
+	range2 = splitLength+1:cols
+	for i in range1
+		update_edges(adj, Plane{T}(Planes[:, i]), range2)
+	end
+	for i in range2
+		if splitLength == 0
+			range1 = 1:i-1
+		end
+		addplane(adj, planes, i, range1)
+	end
+
+
+	#=
 	iRange = 1:(splitLength == 0? cols : splitLength)
 	for i = iRange
 		pi = Plane{T}(planes[:, i])
@@ -459,6 +523,7 @@ function calcedges{T}(adj::Adjacency{T}, planes::Matrix{T}, splitLength::Int = 0
 			end
 		end
 	end
+	=#
 	adj
 end
 

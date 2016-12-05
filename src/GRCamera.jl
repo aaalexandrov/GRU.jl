@@ -35,7 +35,7 @@ getproj(cam::Camera) = cam.proj
 function getfrustum(cam::Camera)
 	if cam.frustumDirty
 		calc_frustum(cam, cam.frustum.planes)
-		Shapes.calcedges(cam.frustum)
+		#Shapes.calcedges(cam.frustum)
 		cam.frustumDirty = false
 	end
 	cam.frustum
