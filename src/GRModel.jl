@@ -17,6 +17,8 @@ function settransform(model::Model, m::Matrix{Float32})
 	model.boundDirty = true
 end
 
+localbound(model::Model) = model.mesh.bound
+
 function getbound(model::Model)
 	@assert isvalid(model)
 	if model.boundDirty

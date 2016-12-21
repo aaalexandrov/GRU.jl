@@ -1,9 +1,9 @@
 module Shapes
 
-import Base: similar, max, min, union!, empty!, isempty
+import Base: similar, max, min, union!, empty!, isempty, convert
 
 export Shape, Empty, Space, Line, Plane, Sphere, AABB, Convex
-export isvalid, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside
+export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside
 
 
 iszero{T}(x::T) = abs(x) < eps(T)
@@ -295,7 +295,6 @@ end
 
 AABB{T}(xmin::T, ymin, zmin, xmax, ymax, zmax) = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
 AABB(pmin, pmax) = AABB(pmin..., pmax...)
-AABB(s::Sphere) = AABB(s.c-s.r, s.c+s.r)
 
 isvalid{T}(aabb::AABB{T}) = size(aabb.p) == (3, 2) && !isempty(aabb)
 volume(ab::AABB) = prod(ab.p[i, 2] - ab.p[i, 1] for i=1:3)
@@ -677,6 +676,13 @@ function transform_it{T}(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T})
 	end
 	nothing
 end
+
+# Conversion functions
+
+convert{T}(::Type{AABB{T}}, s::Sphere{T}) = AABB(s.c-s.r, s.c+s.r)
+convert{T}(::Type{AABB{T}}, e::Empty{T}) = empty!(AABB{T}())
+convert{T}(::Type{Sphere{T}}, ab::AABB{T}) = Sphere{T}(0.5(min(ab) + max(ab)), 0.5len(max(ab) - min(ab)))
+convert{T}(::Type{Sphere{T}}, e::Empty{T}) = empty!(Sphere{T}())
 
 
 # Intersection functions
