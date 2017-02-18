@@ -3,7 +3,7 @@ module Shapes
 import Base: similar, max, min, union!, empty!, isempty, convert
 
 export Shape, Empty, Space, Line, Plane, Sphere, AABB, Convex
-export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside
+export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside, assign
 
 
 iszero{T}(x::T) = abs(x) < eps(T)
@@ -241,6 +241,12 @@ end
 Sphere{T}(cx::T, cy, cz, r) = Sphere{T}(T[cx, cy, cz], convert(T, r))
 Sphere(c, z) = Sphere(c..., z)
 
+function assign(s1::Sphere, s2::Sphere)
+	s1.c[:] = s2.c
+	s1.r = s2.r
+	s1
+end
+
 isvalid{T}(s::Sphere{T}) = size(s.c) == (3,) && !isempty(s)
 volume(s::Sphere) = s.r^3*4pi/3
 isempty{T}(s::Sphere{T}) = s.r < zero(T)
@@ -295,6 +301,11 @@ end
 
 AABB{T}(xmin::T, ymin, zmin, xmax, ymax, zmax) = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
 AABB(pmin, pmax) = AABB(pmin..., pmax...)
+
+function assign(ab1::AABB, ab2::AABB)
+	ab1.p[:] = ab2.p
+	ab1
+end
 
 isvalid{T}(aabb::AABB{T}) = size(aabb.p) == (3, 2) && !isempty(aabb)
 volume(ab::AABB) = prod(ab.p[i, 2] - ab.p[i, 1] for i=1:3)
