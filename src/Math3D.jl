@@ -1,7 +1,7 @@
 module Math3D
 
 export orthogonalize, orthogonalize!
-export rotx, roty, rotz, rot, trans, perspective, ortho
+export rotx, roty, rotz, rotxyz, rot, axisangle, trans, perspective, ortho
 
 function orthogonalize(v::Vector, n::Vector)
 	nUnit = normalize(n)
@@ -100,6 +100,27 @@ function rot(m::Matrix, axis::Vector, angle::Real)
 end
 
 rot(axis::Vector, angle::Real) = rot(Array(typeof(angle), 3, 3), axis, angle)
+
+function axisangle{T}(m::Matrix{T})
+	t = m[1,1] + m[2,2] + m[3,3]
+	anglecos = (t-1)/2
+	anglecos >= 1 - eps(T) && return T[0,0,1], zero(T)
+	axis = [m[3,2] - m[2,3], m[1,3] - m[3,1], m[2,1] - m[1,2]]
+	if anglecos <= -1 + eps(T)
+		squares = T[(m[1,1]+1)/2, (m[2,2]+1)/2, (m[3,3]+1)/2]
+		axis /= 4
+		i = indmax(squares)
+		axis[i] = squares[i]
+		maxel = sqrt(squares[i])
+		axis /= maxel
+		return axis,T(pi)
+	end
+	axislen = norm(axis)
+	anglesin = axislen/2
+	angle = atan2(anglesin, anglecos)
+	axis /= axislen
+	axis, angle
+end
 
 function trans(m::Matrix, t::Vector)
 	m[1,4] = t[1]
