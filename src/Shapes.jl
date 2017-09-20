@@ -9,7 +9,7 @@ export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getint
 iszero{T}(x::T) = abs(x) < eps(T)
 
 len2(x, y, z) = x*x + y*y + z*z
-len2(x) = sumabs2(x)
+len2(x) = sum(abs2, x)
 len(x, y, z) = sqrt(len2(x, y, z))
 len(x) = sqrt(len2(x))
 
@@ -113,7 +113,7 @@ function normalize_planes{T}(planes::Matrix{T})
 end
 
 
-abstract Shape{T <: Real}
+abstract type Shape{T <: Real} end
 
 similar{S <: Shape}(s::S) = S()
 function transform{S <: Shape}(m::Matrix, s::S)
@@ -142,8 +142,8 @@ transform(sDest::Space, m::Matrix, s::Space) = nothing
 type Line{T} <: Shape{T}
 	p::Array{T, 2}
 
-	Line(p::Array{T, 2}) = new(p)
-	Line() = new(Array(T, 3, 2))
+	Line{T}(p::Array{T, 2}) where T = new(p)
+	Line{T}() where T = new(Array{T}(3, 2))
 end
 
 function Line{T}(x1::T, y1, z1, x2, y2, z2)
@@ -206,8 +206,8 @@ end
 type Plane{T} <: Shape{T}
 	p::Array{T, 1}
 
-	Plane(p::Array{T, 1}) = new(p)
-	Plane() = new(Array(T, 4))
+	Plane{T}(p::Array{T, 1}) where T = new(p)
+	Plane{T}() where T = new(Array{T}(4))
 end
 
 Plane{T}(a::T, b, c, d) = Plane{T}(T[a, b, c, d])
@@ -234,8 +234,8 @@ type Sphere{T} <: Shape{T}
 	c::Array{T, 1}
 	r::T
 
-	Sphere(c::Array{T, 1}, r) = new(c, r)
-	Sphere() = new(Array(T, 3), 0)
+	Sphere{T}(c::Array{T, 1}, r) where T = new(c, r)
+	Sphere{T}() where T = new(Array{T}(3), 0)
 end
 
 Sphere{T}(cx::T, cy, cz, r) = Sphere{T}(T[cx, cy, cz], convert(T, r))
@@ -295,8 +295,8 @@ end
 type AABB{T} <: Shape{T}
 	p::Array{T, 2}
 
-	AABB(p::Array{T, 2}) = new(p)
-	AABB() = new(Array(T, 3, 2))
+	AABB{T}(p::Array{T, 2}) where T = new(p)
+	AABB{T}() where T = new(Array{T}(3, 2))
 end
 
 AABB{T}(xmin::T, ymin, zmin, xmax, ymax, zmax) = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
@@ -345,8 +345,8 @@ function union!{T}(ab1::AABB{T}, ab2::AABB{T})
 end
 
 function transform{T}(abDest::AABB{T}, m::Matrix{T}, ab::AABB{T})
-	t = Array(T, 3)
-	p = Array(T, 3)
+	t = Array{T}(3)
+	p = Array{T}(3)
 	p[1] = ab.p[1, 1]
 	p[2] = ab.p[2, 1]
 	p[3] = ab.p[3, 1]
@@ -382,7 +382,7 @@ end
 type Adjacency{T <: Real}
 	faces::Vector{Vector{Int}}
 	edges::Dict{Tuple{Int, Int}, EdgeInfo{T}}
-	Adjacency() = new()
+	Adjacency{T}() where {T <: Real} = new()
 end
 
 isvalid(a::Adjacency) = isdefined(a, :faces) && isdefined(a, :edges)
@@ -582,7 +582,7 @@ type Convex{T} <: Shape{T}
 	planes::Array{T, 2}
 	adj::Adjacency{T}
 
-	Convex(planes::Matrix{T}) = new(planes, Adjacency{T}())
+	Convex{T}(planes::Matrix{T}) where T= new(planes, Adjacency{T}())
 end
 
 Convex{T}(::Type{T}, planeCount::Int) = Convex{T}(zeros(T, 4, planeCount))
@@ -675,7 +675,7 @@ end
 function transform_it{T}(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T})
 	cols = size(c.planes, 2)
 	if size(cDest.planes, 2) != cols
-		cDest.planes = Array(T, 3, cols)
+		cDest.planes = Array{T}(3, cols)
 	end
 	A_mul_B!(cDest.planes, m_it, c.planes)
 	for i = 1:cols

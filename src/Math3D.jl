@@ -71,10 +71,10 @@ function rotxyz(m::Matrix, xAngle::Real, yAngle::Real, zAngle::Real)
 	return m
 end
 
-rotx(angle::Real) = rotx(Array(typeof(angle), 3, 3), angle)
-roty(angle::Real) = roty(Array(typeof(angle), 3, 3), angle)
-rotz(angle::Real) = rotz(Array(typeof(angle), 3, 3), angle)
-rotxyz(xAngle::Real, yAngle::Real, zAngle::Real) = rotxyz(Array(typeof(xAngle), 3, 3), xAngle, yAngle, zAngle)
+rotx(angle::Real) = rotx(Array{typeof(angle)}(3, 3), angle)
+roty(angle::Real) = roty(Array{typeof(angle)}(3, 3), angle)
+rotz(angle::Real) = rotz(Array{typeof(angle)}(3, 3), angle)
+rotxyz(xAngle::Real, yAngle::Real, zAngle::Real) = rotxyz(Array{typeof(xAngle)}(3, 3), xAngle, yAngle, zAngle)
 
 function rot(m::Matrix, axis::Vector, angle::Real)
 	u = normalize(axis[1:3])
@@ -99,7 +99,7 @@ function rot(m::Matrix, axis::Vector, angle::Real)
 	return m
 end
 
-rot(axis::Vector, angle::Real) = rot(Array(typeof(angle), 3, 3), axis, angle)
+rot(axis::Vector, angle::Real) = rot(Array{typeof(angle)}(3, 3), axis, angle)
 
 function axisangle{T}(m::Matrix{T})
 	t = m[1,1] + m[2,2] + m[3,3]
@@ -149,19 +149,19 @@ function perspective(m::Matrix, left::Real, right::Real, top::Real, bottom::Real
 	return m
 end
 
-perspective(left::Real, right::Real, top::Real, near::Real, far::Real; leftHanded = false) = perspective(Array(typeof(near), 4, 4), left, right, top, bottom, near, far, leftHanded = leftHanded)
+perspective(left::Real, right::Real, top::Real, near::Real, far::Real; leftHanded = false) = perspective(Array{typeof(near)}(4, 4), left, right, top, bottom, near, far, leftHanded = leftHanded)
 perspective(m::Matrix, width::Real, height::Real, near::Real, far::Real; leftHanded = false) = perspective(m, -0.5width, 0.5width, -0.5height, 0.5height, near, far, leftHanded = leftHanded)
-perspective(width::Real, height::Real, near::Real, far::Real; leftHanded = false) = perspective(Array(typeof(near), 4, 4), width, height, near, far, leftHanded = leftHanded)
+perspective(width::Real, height::Real, near::Real, far::Real; leftHanded = false) = perspective(Array{typeof(near)}(4, 4), width, height, near, far, leftHanded = leftHanded)
 function persp_horizontal_fov(m::Matrix, hfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false)
 	width = 2near*tan(hfov/2)
 	perspective(m, width, width / w_h_ratio, near, far, leftHanded = leftHanded)
 end
-persp_horizontal_fov(hfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false) = persp_horizontal_fov(Array(typeof(near), 4, 4), hfov, w_h_ratio, near, far, leftHanded = leftHanded)
+persp_horizontal_fov(hfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false) = persp_horizontal_fov(Array{typeof(near)}(4, 4), hfov, w_h_ratio, near, far, leftHanded = leftHanded)
 function persp_vertical_fov(m::Matrix, vfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false)
 	height = 2near*tan(vfov/2)
 	perspective(m, w_h_ratio * height, height, near, far, leftHanded = leftHanded)
 end
-persp_vertical_fov(vfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false) = persp_vertical_fov(Array(typeof(near), 4, 4), vfov, w_h_ratio, near, far, leftHanded = leftHanded)
+persp_vertical_fov(vfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false) = persp_vertical_fov(Array{typeof(near)}(4, 4), vfov, w_h_ratio, near, far, leftHanded = leftHanded)
 
 function ortho(m::Matrix, left::Real, right::Real, top::Real, bottom::Real, near::Real, far::Real; leftHanded = false)
 	zsign = leftHanded? -1 : 1
@@ -172,8 +172,8 @@ function ortho(m::Matrix, left::Real, right::Real, top::Real, bottom::Real, near
 	return m
 end
 
-ortho(left::Real, right::Real, top::Real, bottom::Real, near::Real, far::Real; leftHanded = false) = ortho(Array(typeof(near), 4, 4), left, right, top, bottom, near, far, leftHanded = leftHanded)
+ortho(left::Real, right::Real, top::Real, bottom::Real, near::Real, far::Real; leftHanded = false) = ortho(Array{typeof(near)}(4, 4), left, right, top, bottom, near, far, leftHanded = leftHanded)
 ortho(m::Matrix, width::Real, height::Real, near::Real, far::Real; leftHanded = false) = ortho(m, -0.5width, 0.5width, -0.5height, 0.5height, near, far, leftHanded = leftHanded)
-ortho(width::Real, height::Real, near::Real, far::Real; leftHanded = false) = ortho(Array(typeof(near), 4, 4), width, height, near, far, leftHanded = leftHanded)
+ortho(width::Real, height::Real, near::Real, far::Real; leftHanded = false) = ortho(Array{typeof(near)}(4, 4), width, height, near, far, leftHanded = leftHanded)
 
 end

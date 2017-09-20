@@ -161,7 +161,7 @@ end
 
 function glyph_bitmap(bmpRec::FreeType.FT_Bitmap)
 	@assert bmpRec.pixel_mode == FreeType.FT_PIXEL_MODE_GRAY
-	bmp = Array(UInt8, bmpRec.width, bmpRec.rows)
+	bmp = Array{UInt8}(bmpRec.width, bmpRec.rows)
 	row = bmpRec.buffer
 	if bmpRec.pitch < 0
 		row -= bmpRec.pitch * (rbmpRec.rows - 1)
@@ -178,7 +178,7 @@ end
 function get_kerning(face::FT_Face, c1::Char, c2::Char, divisor::Float32)
 	i1 = FT_Get_Char_Index(face, c1)
 	i2 = FT_Get_Char_Index(face, c2)
-	kernVec = Array(FreeType.FT_Vector, 1)
+	kernVec = Array{FreeType.FT_Vector}(1)
 	err = FT_Get_Kerning(face, i1, i2, FreeType.FT_KERNING_DEFAULT, kernVec)
 	if err != 0
 		return zero(Vec2{Float})

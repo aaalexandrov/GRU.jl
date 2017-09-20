@@ -14,9 +14,9 @@ using .GLHelper
 import DevIL
 import .Shapes
 
-abstract AbstractRenderer
-abstract Renderable
-abstract Resource
+abstract type AbstractRenderer end
+abstract type Renderable end
+abstract type Resource end
 
 function init_resource(r::Resource, renderer::AbstractRenderer, id::Symbol)
 	r.renderer = renderer
@@ -28,8 +28,8 @@ end
 getid(r::Resource) = r.id
 getrenderer(r::Resource) = r.renderer
 
-abstract AbstractMesh <: Resource
-abstract AbstractTexture <: Resource
+abstract type AbstractMesh <: Resource end
+abstract type AbstractTexture <: Resource end
 
 include("GRTypes.jl")
 

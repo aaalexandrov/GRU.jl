@@ -14,7 +14,7 @@ type Material
 	blockBuffers::Vector{UniformBlockBuffer}
 	states::RenderStateHolder
 
-	Material(shader::Shader) = new(shader, Dict{Symbol, Any}(), Array(UniformBlockBuffer, length(shader.blocks)), RenderStateHolder())
+	Material(shader::Shader) = new(shader, Dict{Symbol, Any}(), Array{UniformBlockBuffer}(length(shader.blocks)), RenderStateHolder())
 end
 
 isvalid(mat::Material) = isvalid(mat.shader)
@@ -27,7 +27,7 @@ function apply(mat::Material, renderer::Renderer)
 	end
 
 	for i in 1:length(mat.blockBuffers)
-		if isdefined(mat.blockBuffers, i)
+		if isassigned(mat.blockBuffers, i)
 			buffer = mat.blockBuffers[i]
 			setbufferdata(buffer.block, buffer.buffer)
 		end
@@ -44,7 +44,7 @@ function setuniform(mat::Material, uniform::Symbol, value; allowAdd = true)
 	if haskey(mat.shader.uniforms, uniform)
 		var = mat.shader.uniforms[uniform]
 		if inblock(var)
-			if !isdefined(mat.blockBuffers, Int(var.blockId))
+			if !isassigned(mat.blockBuffers, Int(var.blockId))
 				if !allowAdd
 					return false
 				end
@@ -68,7 +68,7 @@ function getuniform(mat::Material, uniform::Symbol)
 	if haskey(mat.shader.uniforms, uniform)
 		var = mat.shader.uniforms[uniform]
 		if inblock(var)
-			if isdefined(mat.blockBuffers, Int(var.blockId))
+			if isassigned(mat.blockBuffers, Int(var.blockId))
 				return getvalue(var, mat.blockBuffers[var.blockId].buffer)
 			end
 		else
@@ -83,7 +83,7 @@ function hasuniform(mat::Material, uniform::Symbol)
 		return false
 	end
 	var = mat.shader.uniforms[uniform]
-	if inblock(var) && isdefined(mat.blockBuffers, Int(var.blockId))
+	if inblock(var) && isassigned(mat.blockBuffers, Int(var.blockId))
 		return true
 	end
 	return haskey(mat.uniforms, uniform)

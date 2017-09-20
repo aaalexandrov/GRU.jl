@@ -1,4 +1,4 @@
-abstract AbstractImmutableVector
+abstract type AbstractImmutableVector end
 
 immutable Vec2 <: AbstractImmutableVector
 	x::Float32
@@ -43,7 +43,7 @@ immutable MatrixColumn4
 	e4::Float32
 end
 
-abstract AbstractImmutableMatrix
+abstract type AbstractImmutableMatrix end
 
 immutable Matrix3 <: AbstractImmutableMatrix
 	c1::MatrixColumn3

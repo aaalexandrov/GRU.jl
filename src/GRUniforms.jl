@@ -23,7 +23,7 @@ function init(block::UniformBlock, program::GLuint, blockIndex::GLuint)
 
 	glGetActiveUniformBlockiv(program, block.index, GL_UNIFORM_BLOCK_NAME_LENGTH, val)
 	@assert glGetError() == GL_NO_ERROR
-	nameBuf = Array(UInt8, val[1])
+	nameBuf = Array{UInt8}(val[1])
 	glGetActiveUniformBlockName(program, block.index, length(nameBuf), C_NULL, nameBuf)
 	@assert glGetError() == GL_NO_ERROR
 	block.name = Symbol(nameBuf[1:end-1])
@@ -112,7 +112,7 @@ function getvalue(var::UniformVar, buffer::Vector{UInt8}, index::Int = 1)
 	ptr = getptr(var, buffer, index)
 
 	if ismatrix(var.varType)
-		result = Array(eltype(var.varType), size(var.varType))
+		result = Array{eltype(var.varType)}(size(var.varType))
 		@assert sizeof(result) == sizeof(var.varType)
 		unsafe_copy!(convert(Ptr{UInt8}, pointer(result)), convert(Ptr{UInt8}, ptr), sizeof(var.varType))
 		return result

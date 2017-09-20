@@ -87,7 +87,7 @@ function init{T}(mesh::Mesh, renderer::Renderer, vertices::Vector{T}, indices::V
 end
 
 function init(mesh::Mesh, shader::Shader, vertFields::Dict{Symbol, Array}, indices::Vector{UInt16}; positionFunc::Function = identity, id::Symbol = :mesh, usage::Symbol = :static)
-	vertices = Array(shader.attribType, size(first(vertFields)[2], 2))
+	vertices = Array{shader.attribType}(size(first(vertFields)[2], 2))
 	set_array_fields(vertices, vertFields)
 	init(mesh, shader.renderer, vertices, indices; positionFunc = positionFunc, id = id, usage = usage)
 end

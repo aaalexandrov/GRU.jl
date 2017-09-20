@@ -49,7 +49,7 @@ typemax(v::Vec2) = typemax(typeof(v))
 (/)(v::Vec2, n::Number) = Vec2(v.x / n, v.y / n)
 (/)(n::Number, v::Vec2) = Vec2(n / v.x, n / v.y)
 
-(.<)(v1::Vec2, v2::Vec2) = v1.x < v2.x && v1.y < v2.y
+broadcast(::typeof(<), v1::Vec2, v2::Vec2) = v1.x < v2.x && v1.y < v2.y
 
 min(v::Vec2) = v
 min(v1::Vec2, v2::Vec2) = Vec2(min(v1.x, v2.x), min(v1.y, v2.y))
@@ -70,7 +70,7 @@ isempty(b::Box) = b.max .< b.min
 union(bs::Box...) = Box(min([b.min for b in bs]), max([b.max for b in bs]))
 intersect(bs::Box...) = Box(max([b.min for b in bs]), min([b.max for b in bs]))
 
-typealias Rect{T} Box{Vec2{T}}
+Rect{T} = Box{Vec2{T}}
 
 rect(T, minX, minY, maxX, maxY) = Box(Vec2{T}(minX, minY), Vec2{T}(maxX, maxY))
 rect(T) = Box(typemax(Vec2{T}), typemin(Vec2{T}))

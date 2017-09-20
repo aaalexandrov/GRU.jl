@@ -1,4 +1,4 @@
-typealias Color Tuple{Float32, Float32, Float32, Float32}
+Color = Tuple{Float32, Float32, Float32, Float32}
 
 type Renderer <: AbstractRenderer
 	camera::Camera
@@ -10,7 +10,7 @@ type Renderer <: AbstractRenderer
 	clearStencil::Nullable{Int}
 	clearDepth::Nullable{Float64}
 
-	Renderer() = new(Camera(), Dict{Symbol, WeakRef}(), RenderStateHolder(), Array(Renderable, 0), identity, (0f0, 0f0, 0f0, 1f0), 0, 1.0)
+	Renderer() = new(Camera(), Dict{Symbol, WeakRef}(), RenderStateHolder(), Array{Renderable}(0), identity, (0f0, 0f0, 0f0, 1f0), 0, 1.0)
 end
 
 function init(renderer::Renderer)

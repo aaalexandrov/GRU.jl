@@ -1,8 +1,8 @@
-abstract RenderState
-abstract AlphaBlendState <: RenderState
-abstract StencilState <: RenderState
-abstract DepthState <: RenderState
-abstract CullState <: RenderState
+abstract type RenderState end
+abstract type AlphaBlendState <: RenderState end
+abstract type StencilState <: RenderState end
+abstract type DepthState <: RenderState end
+abstract type CullState <: RenderState end
 
 
 type AlphaBlendDisabled <: AlphaBlendState
@@ -93,7 +93,7 @@ type RenderStateHolder
 	RenderStateHolder() = new(Dict{DataType, RenderState}())
 end
 
-function resetstate(holder::RenderStateHolder, state::RenderState) 
+function resetstate(holder::RenderStateHolder, state::RenderState)
 	@assert supertype(T) == RenderState
 	delete!(holder.states, state)
 end

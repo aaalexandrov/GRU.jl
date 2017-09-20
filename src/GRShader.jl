@@ -91,7 +91,7 @@ function get_info_log(glObj::GLuint, get::Function, getInfoLog::Function)
 	logLength = GLint[0]
 	get(glObj, GL_INFO_LOG_LENGTH, logLength)
 
-	message = Array(UInt8, logLength[1])
+	message = Array{UInt8}(logLength[1])
 	getInfoLog(glObj, logLength[1], C_NULL, message)
 	unsafe_string(message)
 end
@@ -160,33 +160,33 @@ function inituniforms(shader::Shader)
 	count = length(uniformIndices)
 	@assert count == val[1]
 
-	uniformTypes = Array(GLint, count)
+	uniformTypes = Array{GLint}(count)
 	glGetActiveUniformsiv(shader.program, count, uniformIndices, GL_UNIFORM_TYPE, uniformTypes)
 	@assert glGetError() == GL_NO_ERROR
 
-	uniformOffsets = Array(GLint, count)
+	uniformOffsets = Array{GLint}(count)
 	glGetActiveUniformsiv(shader.program, count, uniformIndices, GL_UNIFORM_OFFSET, uniformOffsets)
 	@assert glGetError() == GL_NO_ERROR
 
-	uniformArraySizes = Array(GLint, count)
+	uniformArraySizes = Array{GLint}(count)
 	glGetActiveUniformsiv(shader.program, count, uniformIndices, GL_UNIFORM_SIZE, uniformArraySizes)
 	@assert glGetError() == GL_NO_ERROR
 
-	uniformArrayStrides = Array(GLint, count)
+	uniformArrayStrides = Array{GLint}(count)
 	glGetActiveUniformsiv(shader.program, count, uniformIndices, GL_UNIFORM_ARRAY_STRIDE, uniformArrayStrides)
 	@assert glGetError() == GL_NO_ERROR
 
-	uniformMatrixStrides = Array(GLint, count)
+	uniformMatrixStrides = Array{GLint}(count)
 	glGetActiveUniformsiv(shader.program, count, uniformIndices, GL_UNIFORM_MATRIX_STRIDE, uniformMatrixStrides)
 	@assert glGetError() == GL_NO_ERROR
 
-	uniformBlockIndices = Array(GLint, count)
+	uniformBlockIndices = Array{GLint}(count)
 	glGetActiveUniformsiv(shader.program, count, uniformIndices, GL_UNIFORM_BLOCK_INDEX, uniformBlockIndices)
 	@assert glGetError() == GL_NO_ERROR
 
 	glGetProgramiv(shader.program, GL_ACTIVE_UNIFORM_MAX_LENGTH, val)
 	@assert glGetError() == GL_NO_ERROR
-	nameBuf = Array(UInt8, val[1])
+	nameBuf = Array{UInt8}(val[1])
 
 	# set program so we can set sampler uniforms
 	glUseProgram(shader.program)
@@ -243,12 +243,12 @@ function initattributes(shader::Shader)
 
 	glGetProgramiv(shader.program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, val)
 	@assert glGetError() == GL_NO_ERROR
-	nameBuf = Array(UInt8, val[1])
+	nameBuf = Array{UInt8}(val[1])
 
 	typeBuf = GLenum[0]
 	sizeBuf = GLint[0]
 
-	typeFields = Array(Expr, attribCount)
+	typeFields = Array{Expr}(attribCount)
 	for i = 1:attribCount
 		glGetActiveAttrib(shader.program, i-1, length(nameBuf), C_NULL, sizeBuf, typeBuf, nameBuf)
 		@assert glGetError() == GL_NO_ERROR

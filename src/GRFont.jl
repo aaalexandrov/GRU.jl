@@ -26,7 +26,7 @@ function init(font::Font, ftFont::FTFont.Font, shader::Shader; positionFunc::Fun
 	setstate(material, DepthStateDisabled())
 
 	mesh = Mesh()
-	init(mesh, shader.renderer, Array(shader.attribType, maxCharacters * 4), zeros(UInt16, maxCharacters * 6); positionFunc = positionFunc, id = Symbol("Mesh_" * fontName), usage = :dynamic)
+	init(mesh, shader.renderer, Array{shader.attribType}(maxCharacters * 4), zeros(UInt16, maxCharacters * 6); positionFunc = positionFunc, id = Symbol("Mesh_" * fontName), usage = :dynamic)
 	mesh.indexLength = 0
 
 	font.font = ftFont
@@ -48,6 +48,11 @@ function done(font::Font)
 	end
 end
 
+function make_vertex{V}(::Type{V}, pos, col, tex)
+	t = (pos, col, tex)
+	unsafe_load(Ptr{V}(pointer_from_objref(t)))
+end
+
 function drawchar(font::Font, pos::FTFont.Vec2{Float32}, bmp::Array{UInt8, 2}, box::FTFont.Rect{Int}, color::Color)
 	@assert font.model.mesh.indexLength < length(font.model.mesh.indices)
 	baseIndex = font.charCount * 6
@@ -60,10 +65,19 @@ function drawchar(font::Font, pos::FTFont.Vec2{Float32}, bmp::Array{UInt8, 2}, b
 
 	vertType = eltype(vertices)
 	vecColor = Vec4(color...)
-	vertices[baseVertex+1] = vertType(Vec3(pos.x,			  pos.y,			  0), vecColor, Vec2(boxF.min.x / texWidth, boxF.min.y / texHeight))
-	vertices[baseVertex+2] = vertType(Vec3(pos.x,			  pos.y + boxFSize.y, 0), vecColor, Vec2(boxF.min.x / texWidth, boxF.max.y / texHeight))
-	vertices[baseVertex+3] = vertType(Vec3(pos.x + boxFSize.x, pos.y,			  0), vecColor, Vec2(boxF.max.x / texWidth, boxF.min.y / texHeight))
-	vertices[baseVertex+4] = vertType(Vec3(pos.x + boxFSize.x, pos.y + boxFSize.y, 0), vecColor, Vec2(boxF.max.x / texWidth, boxF.max.y / texHeight))
+	@assert sizeof(vertType) == sizeof(Tuple{Vec3, Vec4, Vec2})
+
+	vertices[baseVertex+1] = make_vertex(vertType, Vec3(pos.x,			  pos.y,			  0), vecColor, Vec2(boxF.min.x / texWidth, boxF.min.y / texHeight))
+	vertices[baseVertex+2] = make_vertex(vertType, Vec3(pos.x,			  pos.y + boxFSize.y, 0), vecColor, Vec2(boxF.min.x / texWidth, boxF.max.y / texHeight))
+	vertices[baseVertex+3] = make_vertex(vertType, Vec3(pos.x + boxFSize.x, pos.y,			  0), vecColor, Vec2(boxF.max.x / texWidth, boxF.min.y / texHeight))
+	vertices[baseVertex+4] = make_vertex(vertType, Vec3(pos.x + boxFSize.x, pos.y + boxFSize.y, 0), vecColor, Vec2(boxF.max.x / texWidth, boxF.max.y / texHeight))
+
+	#=
+	vertices[baseVertex+1] = Base.invokelatest(vertType, Vec3(pos.x,			  pos.y,			  0), vecColor, Vec2(boxF.min.x / texWidth, boxF.min.y / texHeight))
+	vertices[baseVertex+2] = Base.invokelatest(vertType, Vec3(pos.x,			  pos.y + boxFSize.y, 0), vecColor, Vec2(boxF.min.x / texWidth, boxF.max.y / texHeight))
+	vertices[baseVertex+3] = Base.invokelatest(vertType, Vec3(pos.x + boxFSize.x, pos.y,			  0), vecColor, Vec2(boxF.max.x / texWidth, boxF.min.y / texHeight))
+	vertices[baseVertex+4] = Base.invokelatest(vertType, Vec3(pos.x + boxFSize.x, pos.y + boxFSize.y, 0), vecColor, Vec2(boxF.max.x / texWidth, boxF.max.y / texHeight))
+	=#
 
 	indices[baseIndex+1] = baseVertex
 	indices[baseIndex+2] = baseVertex + 1
