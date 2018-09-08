@@ -14,9 +14,7 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 [[DevIL]]
 deps = ["Libdl"]
 git-tree-sha1 = "2a2efc80dfc274f1085108f8c61afe0a6b3f7efa"
-repo-rev = "master"
-repo-url = "dev/DevIL"
-uuid = "eaaf24f0-b2bd-11e8-22de-f3d7c5123087"
+uuid = "01638602-6071-5c9b-be9d-28079212bf65"
 version = "0.5.0"
 
 [[Distributed]]
