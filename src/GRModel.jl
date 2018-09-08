@@ -5,7 +5,7 @@ mutable struct Model <: Renderable
 	boundDirty::Bool
 	bound::Shapes.Shape
 
-	Model(mesh::Mesh, material::Material) = new(mesh, material, eye(Float32, 4), true, similar(mesh.bound))
+	Model(mesh::Mesh, material::Material) = new(mesh, material, Matrix{Float32}(I, 4, 4), true, similar(mesh.bound))
 end
 
 isvalid(model::Model) = isvalid(model.mesh) && isvalid(model.material)

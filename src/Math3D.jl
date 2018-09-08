@@ -1,5 +1,7 @@
 module Math3D
 
+using LinearAlgebra
+
 export orthogonalize, orthogonalize!
 export rotx, roty, rotz, rotxyz, rot, axisangle, trans, perspective, ortho
 
@@ -129,7 +131,7 @@ function trans(m::Matrix, t::Vector)
 	return m
 end
 
-trans(t::Vector) = trans(eye(eltype(t), 4), t)
+trans(t::Vector) = trans(Matrix{eltype(t)}(I, 4, 4), t)
 
 function scale(m::Matrix, s::Vector)
   m[1,1] = s[1]
