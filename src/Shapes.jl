@@ -1,6 +1,7 @@
 module Shapes
 
 import Base: similar, max, min, union!, empty!, isempty, convert
+import LinearAlgebra: norm
 
 export Shape, Empty, Space, Line, Plane, Sphere, AABB, Convex
 export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside, assign
@@ -313,8 +314,8 @@ volume(ab::AABB) = prod(ab.p[i, 2] - ab.p[i, 1] for i=1:3)
 isempty(ab::AABB{T}) where T = ab.p[1, 1] > ab.p[1, 2] || ab.p[2, 1] > ab.p[2, 2] || ab.p[3, 1] > ab.p[3, 2]
 
 function empty!(ab::AABB{T}) where T
-	fill!(ab.p[:, 1], T(Inf))
-	fill!(ab.p[:, 2], T(-Inf))
+	ab.p[:, 1] .= T(Inf)
+	ab.p[:, 2] .= T(-Inf)
 	ab
 end
 
