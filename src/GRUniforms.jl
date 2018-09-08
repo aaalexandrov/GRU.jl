@@ -84,7 +84,7 @@ function setvalue(var::UniformVar, buffer::Vector{UInt8}, array::Array, index::I
 	ptr = getptr(var, buffer, index)
 	# @assert ismatrix(var.varType)
 	if sizeof(var.varType) != sizeof(array)
-		info("$(var.name) has size $(sizeof(var.varType)), trying to set value of size $(sizeof(array))")
+		@info("$(var.name) has size $(sizeof(var.varType)), trying to set value of size $(sizeof(array))")
 		@assert sizeof(var.varType) == sizeof(array)
 	end
 

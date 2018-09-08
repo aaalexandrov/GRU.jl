@@ -190,14 +190,14 @@ function loadfont(faceName::AbstractString; sizeXY::Tuple{Real, Real} = (32, 32)
 	face = (FT_Face)[C_NULL]
 	err = FT_New_Face(ftLib[1], faceName, Int32(faceIndex), face)
 	if err != 0
-		info("Couldn't load font $faceName with error $err")
+		@info("Couldn't load font $faceName with error $err")
 		return nothing
 	end
 
 	err = FT_Set_Pixel_Sizes(face[1], UInt32(sizeXY[1]), UInt32(sizeXY[2]))
 	font = nothing
 	if err != 0
-		info("Couldn't set the pixel size for font $faceName with error $err")
+		@info("Couldn't set the pixel size for font $faceName with error $err")
 	else
 		faceRec = unsafe_load(face[1])
 

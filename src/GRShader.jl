@@ -43,7 +43,7 @@ function init(shader::Shader, renderer::Renderer, vs::Ptr{UInt8}, vsLength::Int,
 			glGetProgramiv(shader.program, GL_LINK_STATUS, linkSuccess)
 			if linkSuccess[1] != GL_TRUE
 				msg = get_program_info_log(shader.program)
-				info("Error linking shader program id $id\n$msg")
+				@info("Error linking shader program id $id\n$msg")
 				glDeleteProgram(shader.program)
 				shader.program = 0
 			end
@@ -114,7 +114,7 @@ function compileshader(shaderType::UInt32, source::Ptr{UInt8}, sourceLength::Int
 	if compileSuccess[1] != GL_TRUE
 		msg = get_shader_info_log(shaderObj)
 		shaderTypeName = shaderType == GL_VERTEX_SHADER ? "VERTEX" : (shaderType == GL_FRAGMENT_SHADER ? "FRAGMENT" : "$shaderType")
-		info("Error compiling shader type $shaderTypeName\n$msg")
+		@info("Error compiling shader type $shaderTypeName\n$msg")
 
 		glDeleteShader(shaderObj)
 		shaderObj = 0
@@ -290,7 +290,7 @@ function setuniform(shader::Shader, uniform::Symbol, value)
 		return true
 	end
 
-	info("Attempt to set inexistent uniform $uniform in shader $(shader.name)")
+	@info("Attempt to set inexistent uniform $uniform in shader $(shader.name)")
 	return false
 end
 

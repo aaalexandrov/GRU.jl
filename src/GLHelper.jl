@@ -86,7 +86,7 @@ function gl_info()
 	vendor = unsafe_string(glGetString(GL_VENDOR))
 	version = unsafe_string(glGetString(GL_VERSION))
 	renderer = unsafe_string(glGetString(GL_RENDERER))
-	info("OpenGL Vendor: $vendor, Version: $version, Renderer: $renderer")
+	@info("OpenGL Vendor: $vendor, Version: $version, Renderer: $renderer")
 end
 
 

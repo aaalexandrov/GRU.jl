@@ -60,7 +60,7 @@ function setuniform(mat::Material, uniform::Symbol, value; allowAdd = true)
 		return true
 	end
 
-	info("setuniform(Material): attempt to set inexistent uniform $uniform")
+	@info("setuniform(Material): attempt to set inexistent uniform $uniform")
 	return false
 end
 
