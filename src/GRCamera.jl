@@ -6,7 +6,7 @@ mutable struct Camera
 	viewDirty::Bool
 	frustumDirty::Bool
 
-	Camera() = new(eye(Float32, 4), eye(Float32, 4), eye(Float32, 4), Shapes.Convex(Float32, 6), false, true)
+	Camera() = new(Matrix{Float32}(I, 4, 4), Matrix{Float32}(I, 4, 4), Matrix{Float32}(I, 4, 4), Shapes.Convex(Float32, 6), false, true)
 end
 
 function settransform(cam::Camera, xform::Matrix{Float32})

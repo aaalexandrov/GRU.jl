@@ -6,4 +6,5 @@ version = "0.1.0"
 [deps]
 DevIL = "01638602-6071-5c9b-be9d-28079212bf65"
 FreeType = "b38be410-82b0-50bf-ab77-7b57e271db43"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ModernGL = "66fc600b-dfda-50eb-8b99-91cfa97b1301"

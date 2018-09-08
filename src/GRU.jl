@@ -8,6 +8,8 @@ include("Math2D.jl")
 include("Math3D.jl")
 include("FTFont.jl")
 
+using LinearAlgebra
+
 using ModernGL
 using .GLHelper
 
