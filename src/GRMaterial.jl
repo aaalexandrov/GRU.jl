@@ -1,4 +1,4 @@
-type UniformBlockBuffer
+mutable struct UniformBlockBuffer
 	block::UniformBlock
 	buffer::Vector{UInt8}
 
@@ -8,7 +8,7 @@ type UniformBlockBuffer
 	UniformBlockBuffer(block::UniformBlock) = new(block, zeros(UInt8, block.size))
 end
 
-type Material
+mutable struct Material
 	shader::Shader
 	uniforms::Dict{Symbol, Any}
 	blockBuffers::Vector{UniformBlockBuffer}
@@ -38,7 +38,7 @@ end
 
 resetstate(mat::Material, state::RenderState) = resetstate(mat.states, state)
 setstate(mat::Material, state::RenderState) = setstate(mat.states, state)
-getstate{T <: RenderState}(mat::Material, ::Type{T}, default) = getstate(mat.states, T, default)
+getstate(mat::Material, ::Type{T}, default) where T <: RenderState = getstate(mat.states, T, default)
 
 function setuniform(mat::Material, uniform::Symbol, value; allowAdd = true)
 	if haskey(mat.shader.uniforms, uniform)

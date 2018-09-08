@@ -1,6 +1,6 @@
 import .FTFont
 
-type Font
+mutable struct Font
 	font::FTFont.Font
 	model::Model
 	vertexType::DataType
@@ -48,7 +48,7 @@ function done(font::Font)
 	end
 end
 
-function make_vertex{V}(::Type{V}, pos, col, tex)
+function make_vertex(::Type{V}, pos, col, tex) where V
 	t = (pos, col, tex)
 	unsafe_load(Ptr{V}(pointer_from_objref(t)))
 end

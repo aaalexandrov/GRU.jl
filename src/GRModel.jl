@@ -1,4 +1,4 @@
-type Model <: Renderable
+mutable struct Model <: Renderable
 	mesh::Mesh
 	material::Material
 	transform::Matrix{Float32}

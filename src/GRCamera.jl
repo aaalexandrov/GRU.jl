@@ -1,4 +1,4 @@
-type Camera
+mutable struct Camera
 	xform::Matrix{Float32}
 	view::Matrix{Float32}
 	proj::Matrix{Float32}

@@ -1,4 +1,4 @@
-type VertexLayout
+mutable struct VertexLayout
 	vao::GLuint
 
 	VertexLayout() = new(0)
@@ -50,7 +50,7 @@ function apply(vl::VertexLayout)
 end
 
 
-type Mesh <: AbstractMesh
+mutable struct Mesh <: AbstractMesh
 	vbo::GLuint
 	ibo::GLuint
 	layout::VertexLayout
@@ -66,7 +66,7 @@ end
 
 isvalid(mesh::Mesh) = mesh.vbo != 0 && mesh.ibo != 0 && isvalid(mesh.layout)
 
-function init{T}(mesh::Mesh, renderer::Renderer, vertices::Vector{T}, indices::Vector{UInt16}; positionFunc::Function = identity, id::Symbol = :mesh, usage::Symbol = :static)
+function init(mesh::Mesh, renderer::Renderer, vertices::Vector{T}, indices::Vector{UInt16}; positionFunc::Function = identity, id::Symbol = :mesh, usage::Symbol = :static) where T
 	@assert !isvalid(mesh)
 	@assert !isempty(vertices)
 	@assert !isempty(indices)
@@ -136,7 +136,7 @@ function done(mesh::Mesh)
 	end
 end
 
-function update_gl_buffer{T}(bufferType::GLenum, buffer::GLuint, data::Vector{T}, range::UnitRange)
+function update_gl_buffer(bufferType::GLenum, buffer::GLuint, data::Vector{T}, range::UnitRange) where T
 	if !isempty(range)
 		glBindBuffer(bufferType, buffer)
 		glBufferSubData(bufferType, (range.start - 1) * sizeof(T), length(range) * sizeof(T), pointer(data, range.start))

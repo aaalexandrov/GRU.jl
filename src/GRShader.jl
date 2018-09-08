@@ -1,4 +1,4 @@
-type Shader <: Resource
+mutable struct Shader <: Resource
 	program::GLuint
 	uniforms::Dict{Symbol, UniformVar}
 	samplers::Vector{Symbol}
@@ -270,7 +270,7 @@ function initattributes(shader::Shader)
 
 	typeSym = Symbol("Vert#" * join(map(string, typeFields), "#"))
 	typeExpr = quote
-		immutable $typeSym
+		struct $typeSym
 			$(typeFields...)
 		end
 		$typeSym

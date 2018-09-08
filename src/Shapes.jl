@@ -6,7 +6,7 @@ export Shape, Empty, Space, Line, Plane, Sphere, AABB, Convex
 export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside, assign
 
 
-iszero{T}(x::T) = abs(x) < eps(T)
+iszero(x::T) where T = abs(x) < eps(T)
 
 len2(x, y, z) = x*x + y*y + z*z
 len2(x) = sum(abs2, x)
@@ -15,19 +15,19 @@ len(x) = sqrt(len2(x))
 
 lerp(x, y, t) = x + (y-x)*t
 
-function scale3{T}(m::AbstractArray{T, 2})
+function scale3(m::AbstractArray{T, 2}) where T
 	l2 = max(len2(m[1,1], m[1,2], m[1,3]), len2(m[2,1], m[2,2], m[2,3]), len2(m[3,1], m[3,2], m[3,3]))
 	sqrt(l2)
 end
 
-function transform_p3{T}(result::AbstractArray{T, 1}, m::AbstractArray{T, 2}, p::AbstractArray{T, 1})
+function transform_p3(result::AbstractArray{T, 1}, m::AbstractArray{T, 2}, p::AbstractArray{T, 1}) where T
 	@simd for i = 1:3
 		@inbounds result[i] = m[i,1]*p[1] + m[i,2]*p[2] + m[i,3]*p[3] + m[i,4]
 	end
 	nothing
 end
 
-function transform_p3{T}(result::AbstractArray{T, 2}, m::AbstractArray{T, 2}, p::AbstractArray{T, 2})
+function transform_p3(result::AbstractArray{T, 2}, m::AbstractArray{T, 2}, p::AbstractArray{T, 2}) where T
 	for c = 1:size(p, 2)
 		@simd for r = 1:3
 			@inbounds result[r, c] = m[r,1]*p[1,c] + m[r,2]*p[2,c] + m[r,3]*p[3,c] + m[r,4]
@@ -36,14 +36,14 @@ function transform_p3{T}(result::AbstractArray{T, 2}, m::AbstractArray{T, 2}, p:
 	nothing
 end
 
-function transform_p4{T}(result::AbstractArray{T, 1}, m::AbstractArray{T, 2}, p::AbstractArray{T, 1})
+function transform_p4(result::AbstractArray{T, 1}, m::AbstractArray{T, 2}, p::AbstractArray{T, 1}) where T
 	@simd for i = 1:3
 		@inbounds result[i] = m[i,1]*p[1] + m[i,2]*p[2] + m[i,3]*p[3] + m[i,4]*p[4]
 	end
 	nothing
 end
 
-function transform_p4{T}(result::AbstractArray{T, 2}, m::AbstractArray{T, 2}, p::AbstractArray{T, 2})
+function transform_p4(result::AbstractArray{T, 2}, m::AbstractArray{T, 2}, p::AbstractArray{T, 2}) where T
 	for c = 1:size(p, 2)
 		@simd for r = 1:4
 			@inbounds result[r, c] = m[r,1]*p[1,c] + m[r,2]*p[2,c] + m[r,3]*p[3,c] + m[r,4]*p[4,c]
@@ -72,9 +72,9 @@ function quadroots(a, b, c)
 	return x1, x2
 end
 
-planevalue{T}(p::Vector{T}, point::Vector{T}) = dot(p[1:3], point) + p[4]
-planenormal{T}(p::Vector{T}) = p[1:3]
-function planepoint{T}(p::Vector{T})
+planevalue(p::Vector{T}, point::Vector{T}) where T= dot(p[1:3], point) + p[4]
+planenormal(p::Vector{T}) where T = p[1:3]
+function planepoint(p::Vector{T}) where T
 	i = indmax(abs(p[i]) for i=1:3)
 	return T[x==i ? -p[4]/p[i] : 0 for x=1:3]
 end
@@ -88,7 +88,7 @@ function normalized_plane(dst, col, n, p)
 	nothing
 end
 
-function set_aabb_planes{T}(dst::Matrix{T}, ptMin::Vector{T}, ptMax::Vector{T})
+function set_aabb_planes(dst::Matrix{T}, ptMin::Vector{T}, ptMax::Vector{T}) where T
 	normalized_plane(dst, 1, T[ 1,  0,  0], ptMin)
 	normalized_plane(dst, 2, T[ 0,  1,  0], ptMin)
 	normalized_plane(dst, 3, T[ 0,  0,  1], ptMin)
@@ -106,7 +106,7 @@ function normalize_plane(dst, col)
 	nothing
 end
 
-function normalize_planes{T}(planes::Matrix{T})
+function normalize_planes(planes::Matrix{T}) where T
 	for i = 1:size(planes, 2)
 		normalize_plane(planes, i)
 	end
@@ -115,38 +115,38 @@ end
 
 abstract type Shape{T <: Real} end
 
-similar{S <: Shape}(s::S) = S()
-function transform{S <: Shape}(m::Matrix, s::S)
+similar(s::S) where S <: Shape = S()
+function transform(m::Matrix, s::S) where S <: Shape
 	dst = similar(s)
 	transform(dst, m, s)
 	dst
 end
 
 # empty shape
-type Empty{T} <: Shape{T}
+mutable struct Empty{T} <: Shape{T}
 end
 
 isvalid(e::Empty) = true
-volume{T}(e::Empty{T}) = zero(T)
+volume(e::Empty{T}) where T = zero(T)
 transform(eDest::Empty, m::Matrix, e::Empty) = nothing
 
 # all space
-type Space{T} <: Shape{T}
+mutable struct Space{T} <: Shape{T}
 end
 
 isvalid(s::Space) = true
-volume{T}(s::Space{T}) = T(Inf)
+volume(s::Space{T}) where T = T(Inf)
 transform(sDest::Space, m::Matrix, s::Space) = nothing
 
 
-type Line{T} <: Shape{T}
+mutable struct Line{T} <: Shape{T}
 	p::Array{T, 2}
 
 	Line{T}(p::Array{T, 2}) where T = new(p)
 	Line{T}() where T = new(Array{T}(3, 2))
 end
 
-function Line{T}(x1::T, y1, z1, x2, y2, z2)
+function Line(x1::T, y1, z1, x2, y2, z2) where T
 	p = Array{T}(3, 2)
 	p[1,1] = x1
 	p[2,1] = y1
@@ -158,11 +158,11 @@ function Line{T}(x1::T, y1, z1, x2, y2, z2)
 end
 
 Line(p0, p1) = Line(p0..., p1...)
-Line{T}(v1::Vector{T}, v2::Vector{T}) = Line(v1[1], v1[2], v1[3], v2[1], v2[2], v2[3])
+Line(v1::Vector{T}, v2::Vector{T}) where T = Line(v1[1], v1[2], v1[3], v2[1], v2[2], v2[3])
 
-isvalid{T}(l::Line{T}) = size(l.p)==(3, 2) && len2(l.p[1, 2] - l.p[1, 1], l.p[2, 2] - l.p[2, 1], l.p[3, 2] - l.p[3, 1]) >= eps(T)
+isvalid(l::Line{T}) where T = size(l.p)==(3, 2) && len2(l.p[1, 2] - l.p[1, 1], l.p[2, 2] - l.p[2, 1], l.p[3, 2] - l.p[3, 1]) >= eps(T)
 
-function getvector{T}(l::Line{T})
+function getvector(l::Line{T}) where T
 	v = Vector{T}(3)
 	v[1] = l.p[1, 2] - l.p[1, 1]
 	v[2] = l.p[2, 2] - l.p[2, 1]
@@ -170,9 +170,9 @@ function getvector{T}(l::Line{T})
 	v
 end
 
-getpoint{T}(l::Line{T}, t::T) = lerp(l.p[:, 1], l.p[:, 2], t)
+getpoint(l::Line{T}, t::T) where T = lerp(l.p[:, 1], l.p[:, 2], t)
 
-function transform{T}(lDest::Line{T}, m::Matrix{T}, l::Line{T})
+function transform(lDest::Line{T}, m::Matrix{T}, l::Line{T}) where T
 	for c = 1:2
 		@simd for r = 1:3
 			@inbounds lDest.p[r, c] = m[r,1]*l.p[1,c] + m[r,2]*l.p[2,c] + m[r,3]*l.p[3,c] + m[r,4]
@@ -181,7 +181,7 @@ function transform{T}(lDest::Line{T}, m::Matrix{T}, l::Line{T})
 	nothing
 end
 
-function plane2interval{T}(p::Vector{T}, l::Line{T}, interval::Tuple{T, T} = (T(-Inf), T(Inf)))
+function plane2interval(p::Vector{T}, l::Line{T}, interval::Tuple{T, T} = (T(-Inf), T(Inf))) where T
 	@assert isvalid(l)
 	@assert size(p) == (4,)
 
@@ -195,7 +195,7 @@ function plane2interval{T}(p::Vector{T}, l::Line{T}, interval::Tuple{T, T} = (T(
 				interval = (T(Inf), T(-Inf))
 			end
 		else
-			rayInterval = dot(planenormal(p), getvector(l)) < 0? (T(-Inf), int) : (int, T(Inf))
+			rayInterval = dot(planenormal(p), getvector(l)) < 0 ? (T(-Inf), int) : (int, T(Inf))
 			interval = intersect_interval(interval, rayInterval)
 		end
 	end
@@ -203,34 +203,34 @@ function plane2interval{T}(p::Vector{T}, l::Line{T}, interval::Tuple{T, T} = (T(
 end
 
 
-type Plane{T} <: Shape{T}
+mutable struct Plane{T} <: Shape{T}
 	p::Array{T, 1}
 
 	Plane{T}(p::Array{T, 1}) where T = new(p)
 	Plane{T}() where T = new(Array{T}(4))
 end
 
-Plane{T}(a::T, b, c, d) = Plane{T}(T[a, b, c, d])
+Plane(a::T, b, c, d) where T = Plane{T}(T[a, b, c, d])
 Plane(n, p) = Plane(n..., -dot(p, n))
 
-isvalid{T}(p::Plane{T}) = size(p.p) == (4,) && len2(p.p[1:3]) >= eps(T)
+isvalid(p::Plane{T}) where T = size(p.p) == (4,) && len2(p.p[1:3]) >= eps(T)
 
-getnormal{T}(p::Plane{T}) = planenormal(p.p)
-getvalue{T}(p::Plane{T}, point::Vector{T}) = planevalue(p.p, point)
-getpoint{T}(p::Plane{T}) = planepoint(p.p)
+getnormal(p::Plane{T}) where T = planenormal(p.p)
+getvalue(p::Plane{T}, point::Vector{T}) where T = planevalue(p.p, point)
+getpoint(p::Plane{T}) where T = planepoint(p.p)
 
 # multiply plane by inverse transpose of matrix
-function transform{T}(pDest::Plane{T}, m::Matrix{T}, p::Plane{T})
+function transform(pDest::Plane{T}, m::Matrix{T}, p::Plane{T}) where T
 	m_it = transpose(inv(m))
 	transform_p4(pDest.p, m_it, p.p)
 	nothing
 end
 
 # transform with inverse transpose pre-computed
-transform_it{T}(pDest::Plane{T}, m_it::Matrix{T}, p::Plane{T}) = transform_p4(pDest.p, m_it, p.p)
+transform_it(pDest::Plane{T}, m_it::Matrix{T}, p::Plane{T}) where T = transform_p4(pDest.p, m_it, p.p)
 
 
-type Sphere{T} <: Shape{T}
+mutable struct Sphere{T} <: Shape{T}
 	c::Array{T, 1}
 	r::T
 
@@ -238,7 +238,7 @@ type Sphere{T} <: Shape{T}
 	Sphere{T}() where T = new(Array{T}(3), 0)
 end
 
-Sphere{T}(cx::T, cy, cz, r) = Sphere{T}(T[cx, cy, cz], convert(T, r))
+Sphere(cx::T, cy, cz, r) where T = Sphere{T}(T[cx, cy, cz], convert(T, r))
 Sphere(c, z) = Sphere(c..., z)
 
 function assign(s1::Sphere, s2::Sphere)
@@ -247,16 +247,16 @@ function assign(s1::Sphere, s2::Sphere)
 	s1
 end
 
-isvalid{T}(s::Sphere{T}) = size(s.c) == (3,) && !isempty(s)
+isvalid(s::Sphere{T}) where T = size(s.c) == (3,) && !isempty(s)
 volume(s::Sphere) = s.r^3*4pi/3
-isempty{T}(s::Sphere{T}) = s.r < zero(T)
+isempty(s::Sphere{T}) where T = s.r < zero(T)
 
-function empty!{T}(s::Sphere{T})
+function empty!(s::Sphere{T}) where T
 	s.r = -Inf
 	s
 end
 
-function union!{T}(s::Sphere{T}, p::Vector{T})
+function union!(s::Sphere{T}, p::Vector{T}) where T
 	@assert isvalid(s)
 	@assert length(p) == 3
 
@@ -268,7 +268,7 @@ function union!{T}(s::Sphere{T}, p::Vector{T})
 	s
 end
 
-function union!{T}(s1::Sphere{T}, s2::Sphere{T})
+function union!(s1::Sphere{T}, s2::Sphere{T}) where T
 	c12 = s2.c - s1.c
 	d = norm(c12)
 	if s1.r >= d + s2.r
@@ -285,21 +285,21 @@ function union!{T}(s1::Sphere{T}, s2::Sphere{T})
 	s1
 end
 
-function transform{T}(sDest::Sphere{T}, m::Matrix{T}, s::Sphere{T})
+function transform(sDest::Sphere{T}, m::Matrix{T}, s::Sphere{T}) where T
 	transform_p3(sDest.c, m, s.c)
 	sDest.r = s.r * scale3(m)
 	nothing
 end
 
 
-type AABB{T} <: Shape{T}
+mutable struct AABB{T} <: Shape{T}
 	p::Array{T, 2}
 
 	AABB{T}(p::Array{T, 2}) where T = new(p)
 	AABB{T}() where T = new(Array{T}(3, 2))
 end
 
-AABB{T}(xmin::T, ymin, zmin, xmax, ymax, zmax) = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
+AABB(xmin::T, ymin, zmin, xmax, ymax, zmax) where T = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
 AABB(pmin, pmax) = AABB(pmin..., pmax...)
 
 function assign(ab1::AABB, ab2::AABB)
@@ -307,20 +307,20 @@ function assign(ab1::AABB, ab2::AABB)
 	ab1
 end
 
-isvalid{T}(aabb::AABB{T}) = size(aabb.p) == (3, 2) && !isempty(aabb)
+isvalid(aabb::AABB{T}) where T = size(aabb.p) == (3, 2) && !isempty(aabb)
 volume(ab::AABB) = prod(ab.p[i, 2] - ab.p[i, 1] for i=1:3)
-isempty{T}(ab::AABB{T}) = ab.p[1, 1] > ab.p[1, 2] || ab.p[2, 1] > ab.p[2, 2] || ab.p[3, 1] > ab.p[3, 2]
+isempty(ab::AABB{T}) where T = ab.p[1, 1] > ab.p[1, 2] || ab.p[2, 1] > ab.p[2, 2] || ab.p[3, 1] > ab.p[3, 2]
 
-function empty!{T}(ab::AABB{T})
+function empty!(ab::AABB{T}) where T
 	ab.p[:, 1] = Inf
 	ab.p[:, 2] = -Inf
 	ab
 end
 
-min{T}(ab::AABB{T}) = ab.p[:, 1]
-max{T}(ab::AABB{T}) = ab.p[:, 2]
+min(ab::AABB{T}) where T = ab.p[:, 1]
+max(ab::AABB{T}) where T = ab.p[:, 2]
 
-function addpoint!{T}(minMax::Matrix{T}, p::Vector{T})
+function addpoint!(minMax::Matrix{T}, p::Vector{T}) where T
 	@assert size(minMax) == (3, 2)
 	@assert length(p) == 3
 
@@ -335,8 +335,8 @@ function addpoint!{T}(minMax::Matrix{T}, p::Vector{T})
 	nothing
 end
 
-union!{T}(ab::AABB{T}, p::Vector{T}) = addpoint!(ab.p, p)
-function union!{T}(ab1::AABB{T}, ab2::AABB{T})
+union!(ab::AABB{T}, p::Vector{T}) where T = addpoint!(ab.p, p)
+function union!(ab1::AABB{T}, ab2::AABB{T}) where T
 	for i = 1:3
 		ab1.p[i, 1] = min(ab1.p[i, 1], ab2.p[i, 1])
 		ab1.p[i, 2] = max(ab1.p[i, 2], ab2.p[i, 2])
@@ -344,7 +344,7 @@ function union!{T}(ab1::AABB{T}, ab2::AABB{T})
 	ab1
 end
 
-function transform{T}(abDest::AABB{T}, m::Matrix{T}, ab::AABB{T})
+function transform(abDest::AABB{T}, m::Matrix{T}, ab::AABB{T}) where T
 	t = Array{T}(3)
 	p = Array{T}(3)
 	p[1] = ab.p[1, 1]
@@ -374,12 +374,12 @@ end
 # todo: add Capsule and OBB
 
 
-type EdgeInfo{T <: Real}
+mutable struct EdgeInfo{T <: Real}
 	line::Line{T}
 	interval::Tuple{T, T}
 end
 
-type Adjacency{T <: Real}
+mutable struct Adjacency{T <: Real}
 	faces::Vector{Vector{Int}}
 	edges::Dict{Tuple{Int, Int}, EdgeInfo{T}}
 	Adjacency{T}() where {T <: Real} = new()
@@ -387,13 +387,13 @@ end
 
 isvalid(a::Adjacency) = isdefined(a, :faces) && isdefined(a, :edges)
 
-function init{T}(adj::Adjacency{T}, planes::Matrix{T})
+function init(adj::Adjacency{T}, planes::Matrix{T}) where T
 	adj.faces = [Int[] for i=1:size(planes, 2)]
 	adj.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
 	calcedges(adj, planes)
 end
 
-function init{T}(adj::Adjacency{T}, ab::AABB{T})
+function init(adj::Adjacency{T}, ab::AABB{T}) where T
 	adj.faces = [filter(j->i != j != (i+3-1)%6+1, 1:6) for i=1:6]
 	adj.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
 
@@ -423,8 +423,7 @@ function init{T}(adj::Adjacency{T}, ab::AABB{T})
 	end
 end
 
-function addplane{T}(adj::Adjacency{T}, planes::Matrix{T}, index::Int, planeRange::Range{Int} = 1:index-1)
-	@assert isvalid(adj)
+function addplane(adj::Adjacency{T}, planes::Matrix{T}, index::Int, planeRange::UnitRange{Int} = 1:index-1) where T
 	@assert size(planes, 1) == 4
 
 	p = Plane{T}(planes[:, index])
@@ -451,7 +450,7 @@ function addplane{T}(adj::Adjacency{T}, planes::Matrix{T}, index::Int, planeRang
 	end
 end
 
-function update_edges{T}(adj::Adjacency{T}, p::Plane{T}, planeRange::Range{Int})
+function update_edges(adj::Adjacency{T}, p::Plane{T}, planeRange::UnitRange{Int}) where T
 	for i in planeRange
 		k = 1
 		while k < length(adj.faces[i])
@@ -473,7 +472,7 @@ function update_edges{T}(adj::Adjacency{T}, p::Plane{T}, planeRange::Range{Int})
 	end
 end
 
-function combine{T}(dst::Adjacency{T}, src1::Adjacency{T}, src2::Adjacency{T}, planes::Matrix{T})
+function combine(dst::Adjacency{T}, src1::Adjacency{T}, src2::Adjacency{T}, planes::Matrix{T}) where T
 	@assert isvalid(src1)
 	@assert isvalid(src2)
 	@assert size(planes, 2) == length(src1.faces) + length(src2.faces)
@@ -492,7 +491,7 @@ function combine{T}(dst::Adjacency{T}, src1::Adjacency{T}, src2::Adjacency{T}, p
 	calcedges(dst, planes, src2Base)
 end
 
-function calcedges{T}(adj::Adjacency{T}, planes::Matrix{T}, splitLength::Int = 0)
+function calcedges(adj::Adjacency{T}, planes::Matrix{T}, splitLength::Int = 0) where T
 	@assert size(planes, 1) == 4
 
 	cols = size(planes, 2)
@@ -537,7 +536,7 @@ function calcedges{T}(adj::Adjacency{T}, planes::Matrix{T}, splitLength::Int = 0
 	adj
 end
 
-function select_planes{T}(adj::Adjacency{T}, keep::Vector{Bool})
+function select_planes(adj::Adjacency{T}, keep::Vector{Bool}) where T
 	@assert length(adj.faces) == length(keep)
 	ind = Vector{T}(length(keep))
 	nextInd = 1
@@ -563,7 +562,7 @@ function select_planes{T}(adj::Adjacency{T}, keep::Vector{Bool})
 	end
 end
 
-function transform{T}(dst::Adjacency{T}, m::Matrix{T}, src::Adjacency{T})
+function transform(dst::Adjacency{T}, m::Matrix{T}, src::Adjacency{T}) where T
 	dst.faces = deepcopy(src.faces)
 	if !isdefined(dst.edges)
 		dst.edges = Dict{Tuple{Int, Int}, EdgeInfo{T}}()
@@ -578,18 +577,18 @@ function transform{T}(dst::Adjacency{T}, m::Matrix{T}, src::Adjacency{T})
 	nothing
 end
 
-type Convex{T} <: Shape{T}
+mutable struct Convex{T} <: Shape{T}
 	planes::Array{T, 2}
 	adj::Adjacency{T}
 
 	Convex{T}(planes::Matrix{T}) where T= new(planes, Adjacency{T}())
 end
 
-Convex{T}(::Type{T}, planeCount::Int) = Convex{T}(zeros(T, 4, planeCount))
-Convex{T}(c1::Convex{T}, c2::Convex{T}) = combine(Convex(T, size(c1.planes, 2) + size(c2.planes, 2)), c1, c2)
-Convex{T}(ab::AABB{T}) = set(Convex{T}(Array{T}(4, 6)), ab)
+Convex(::Type{T}, planeCount::Int) where T = Convex{T}(zeros(T, 4, planeCount))
+Convex(c1::Convex{T}, c2::Convex{T}) where T = combine(Convex(T, size(c1.planes, 2) + size(c2.planes, 2)), c1, c2)
+Convex(ab::AABB{T}) where T = set(Convex{T}(Array{T}(4, 6)), ab)
 
-function Convex{T}(planes::Plane{T}...)
+function Convex(planes::Plane{T}...) where T
 	c = Convex(T, length(planes))
 	for i in 1:length(planes)
 		setplane(c, i, planes[i])
@@ -597,24 +596,24 @@ function Convex{T}(planes::Plane{T}...)
 	c
 end
 
-isvalid{T}(c::Convex{T}) = size(c.planes, 1) == 4 && size(c.planes, 2) > 0
-setplane{T}(c::Convex{T}, planeIndex::Int, p::Vector{T}) = c.planes[:, planeIndex] = p / len(p[1:3])
-isclosed{T}(c::Convex{T}) = !(isempty(c.edges) || any(e->infinite_interval(e.interval), values(c.edges)))
+isvalid(c::Convex{T}) where T = size(c.planes, 1) == 4 && size(c.planes, 2) > 0
+setplane(c::Convex{T}, planeIndex::Int, p::Vector{T}) where T = c.planes[:, planeIndex] = p / len(p[1:3])
+isclosed(c::Convex{T}) where T = !(isempty(c.edges) || any(e->infinite_interval(e.interval), values(c.edges)))
 
-function isempty{T}(c::Convex{T})
+function isempty(c::Convex{T}) where T
 	@assert(isvalid(c))
 	@assert(isvalid(c.adj))
 	!isempty(c.planes) && isempty(c.adj.edges)
 end
 
-function set{T}(c::Convex{T}, ab::AABB{T})
+function set(c::Convex{T}, ab::AABB{T}) where T
 	@assert size(c.planes) == (4, 6)
 	set_aabb_planes(c.planes, ab.p[:, 1], ab.p[:, 2])
 	init(c.adj, ab)
 	c
 end
 
-function combine{T}(dst::Convex{T}, src1::Convex{T}, src2::Convex{T})
+function combine(dst::Convex{T}, src1::Convex{T}, src2::Convex{T}) where T
 	src1Size = size(src1.planes, 2)
 	src2Size = size(src2.planes, 2)
 	if size(dst.planes, 2) != src1Size + src2Size
@@ -626,18 +625,18 @@ function combine{T}(dst::Convex{T}, src1::Convex{T}, src2::Convex{T})
 	dst
 end
 
-function calcedges{T}(c::Convex{T})
+function calcedges(c::Convex{T}) where T
 	@assert isvalid(c)
 	normalize_planes(c.planes)
 	init(c.adj, c.planes)
 end
 
-function select_planes{T}(c::Convex{T}, keep::Vector{Bool})
+function select_planes(c::Convex{T}, keep::Vector{Bool}) where T
 	c.planes = c.planes[:, keep]
 	select_planes(c.adj, keep)
 end
 
-function remove_redundant{T}(c::Convex{T})
+function remove_redundant(c::Convex{T}) where T
 	@assert isvalid(c)
 	@assert isvalid(c.adj)
 
@@ -664,7 +663,7 @@ function remove_redundant{T}(c::Convex{T})
 	end
 end
 
-function transform{T}(cDest::Convex{T}, m::Matrix{T}, c::Convex{T})
+function transform(cDest::Convex{T}, m::Matrix{T}, c::Convex{T}) where T
 	transform_it(cDest, transpose(inv(m)), c)
 	if isvalid(c.adj)
 		transform(cDest.adj, m, c.adj)
@@ -672,7 +671,7 @@ function transform{T}(cDest::Convex{T}, m::Matrix{T}, c::Convex{T})
 	nothing
 end
 
-function transform_it{T}(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T})
+function transform_it(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T}) where T
 	cols = size(c.planes, 2)
 	if size(cDest.planes, 2) != cols
 		cDest.planes = Array{T}(3, cols)
@@ -690,18 +689,18 @@ end
 
 # Conversion functions
 
-convert{T}(::Type{AABB{T}}, s::Sphere{T}) = AABB(s.c-s.r, s.c+s.r)
-convert{T}(::Type{AABB{T}}, e::Empty{T}) = empty!(AABB{T}())
-convert{T}(::Type{Sphere{T}}, ab::AABB{T}) = Sphere{T}(0.5(min(ab) + max(ab)), 0.5len(max(ab) - min(ab)))
-convert{T}(::Type{Sphere{T}}, e::Empty{T}) = empty!(Sphere{T}())
+convert(::Type{AABB{T}}, s::Sphere{T}) where T = AABB(s.c-s.r, s.c+s.r)
+convert(::Type{AABB{T}}, e::Empty{T}) where T = empty!(AABB{T}())
+convert(::Type{Sphere{T}}, ab::AABB{T}) where T = Sphere{T}(0.5(min(ab) + max(ab)), 0.5len(max(ab) - min(ab)))
+convert(::Type{Sphere{T}}, e::Empty{T}) where T = empty!(Sphere{T}())
 
 
 # Intersection functions
 
-getintersection{T}(s1::Shape{T}, s2::Shape{T}) = getintersection(s2, s1)
-intersect{T}(s1::Shape{T}, s2::Shape{T}) = intersect(s2, s1)
+getintersection(s1::Shape{T}, s2::Shape{T}) where T = getintersection(s2, s1)
+intersect(s1::Shape{T}, s2::Shape{T}) where T = intersect(s2, s1)
 
-function line2plane{T}(l::Matrix{T}, plane::Vector{T})
+function line2plane(l::Matrix{T}, plane::Vector{T}) where T
 	lv = Vector{T}(3)
 	lv[1] = l[1, 2] - l[1, 1]
 	lv[2] = l[2, 2] - l[2, 1]
@@ -723,16 +722,16 @@ function line2plane{T}(l::Matrix{T}, plane::Vector{T})
 	return d / vn
 end
 
-function getintersection{T}(l::Line{T}, p::Plane{T})
+function getintersection(l::Line{T}, p::Plane{T}) where T
 	@assert isvalid(l)
 	@assert isvalid(p)
 	line2plane(l.p, p.p)
 end
 
-intersect{T}(l::Line{T}, p::Plane{T}) = !isnan(getintersection(l, p))
+intersect(l::Line{T}, p::Plane{T}) where T = !isnan(getintersection(l, p))
 
 
-function getintersection{T}(l::Line{T}, s::Sphere{T})
+function getintersection(l::Line{T}, s::Sphere{T}) where T
 	@assert isvalid(l)
 	@assert isvalid(s)
 
@@ -742,10 +741,10 @@ function getintersection{T}(l::Line{T}, s::Sphere{T})
 	return quadroots(dot(vo, vo), 2dot(vo, co), dot(co, co)-s.r*s.r)
 end
 
-intersect{T}(l::Line{T}, s::Sphere{T}) = !empty_interval(getintersection(l, s))
+intersect(l::Line{T}, s::Sphere{T}) where T = !empty_interval(getintersection(l, s))
 
 
-function getintersection{T}(l::Line{T}, ab::AABB{T})
+function getintersection(l::Line{T}, ab::AABB{T}) where T
 	@assert isvalid(l)
 	@assert isvalid(ab)
 
@@ -769,9 +768,9 @@ function getintersection{T}(l::Line{T}, ab::AABB{T})
 	tInt
 end
 
-intersect{T}(l::Line{T}, ab::AABB{T}) = !empty_interval(getintersection(l, ab))
+intersect(l::Line{T}, ab::AABB{T}) where T = !empty_interval(getintersection(l, ab))
 
-function getintersection{T}(ab1::AABB{T}, ab2::AABB{T})
+function getintersection(ab1::AABB{T}, ab2::AABB{T}) where T
 	result = AABB{T}()
 	for i = 1:3
 		result.p[i, 1] = max(ab1.p[i, 1], ab2.p[i, 1])
@@ -780,11 +779,11 @@ function getintersection{T}(ab1::AABB{T}, ab2::AABB{T})
 	return result
 end
 
-intersect{T}(ab1::AABB{T}, ab2::AABB{T}) = isvalid(getintersection(ab1, ab2))
+intersect(ab1::AABB{T}, ab2::AABB{T}) where T = isvalid(getintersection(ab1, ab2))
 
 
 # returns a line, a plane or nothing depending on the relative position of the planes
-function getintersection{T}(p1::Plane{T}, p2::Plane{T})
+function getintersection(p1::Plane{T}, p2::Plane{T}) where T
 	@assert isvalid(p1)
 	@assert isvalid(p2)
 
@@ -816,7 +815,7 @@ intersect(p1::Plane, p2::Plane) = getintersection(p1, p2) != nothing
 intersect(c::Convex, e::Empty) = false
 intersect(c::Convex, s::Space) = isvalid(c)
 
-function getintersection{T}(c::Convex{T}, l::Line{T}, interval::Tuple{T, T} = (T(-Inf), T(Inf)))
+function getintersection(c::Convex{T}, l::Line{T}, interval::Tuple{T, T} = (T(-Inf), T(Inf))) where T
 	@assert isvalid(l)
 	@assert isvalid(c)
 
@@ -829,7 +828,7 @@ end
 
 intersect(c::Convex, l::Line) = !empty_interval(getintersection(c, l))
 
-function getintersection{T}(c::Convex{T}, p::Plane{T})
+function getintersection(c::Convex{T}, p::Plane{T}) where T
 	c = Convex{T}(hcat(c.planes, p.p))
 	calcedges(c)
 	remove_redundant(c)
@@ -839,7 +838,7 @@ end
 intersect(c::Convex, p::Plane) = !isempty(getintersection(c, p))
 
 
-function intersect{T}(c::Convex{T}, s::Sphere{T})
+function intersect(c::Convex{T}, s::Sphere{T}) where T
 	@assert isvalid(c)
 	@assert isvalid(c.adj)
 	@assert isvalid(s)
@@ -887,11 +886,11 @@ function intersect{T}(c::Convex{T}, s::Sphere{T})
 	return false
 end
 
-getintersection{T}(c::Convex{T}, ab::AABB{T}) = getintersection(c, Convex(ab))
-intersect{T}(c::Convex{T}, ab::AABB{T}) = !isempty(getintersection(c, ab))
+getintersection(c::Convex{T}, ab::AABB{T}) where T = getintersection(c, Convex(ab))
+intersect(c::Convex{T}, ab::AABB{T}) where T = !isempty(getintersection(c, ab))
 
 
-function getintersection{T}(c1::Convex{T}, c2::Convex{T})
+function getintersection(c1::Convex{T}, c2::Convex{T}) where T
 	c = Convex(c1, c2)
 	remove_redundant(c)
 	c
@@ -903,7 +902,7 @@ intersect(c1::Convex, c2::Convex) = !isempty(getintersection(c1, c2))
 outside(c::Convex, e::Empty) = true
 outside(c::Convex, s::Space) = false
 
-function outside{T}(c::Convex{T}, s::Sphere{T})
+function outside(c::Convex{T}, s::Sphere{T}) where T
 	@assert isvalid(c)
 	@assert isvalid(s)
 	for i = 1:size(c.planes, 2)
@@ -914,7 +913,7 @@ function outside{T}(c::Convex{T}, s::Sphere{T})
 	return false
 end
 
-function outside{T}(c::Convex{T}, ab::AABB{T})
+function outside(c::Convex{T}, ab::AABB{T}) where T
 	@assert isvalid(c)
 	@assert isvalid(ab)
 
@@ -929,7 +928,7 @@ function outside{T}(c::Convex{T}, ab::AABB{T})
 	return false
 end
 
-function inside{T}(enclosing::AABB{T}, ab::AABB{T})
+function inside(enclosing::AABB{T}, ab::AABB{T}) where T
 	@assert size(enclosing.p) == (3,2)
 	@assert size(ab.p) == (3,2)
 
@@ -941,7 +940,7 @@ function inside{T}(enclosing::AABB{T}, ab::AABB{T})
 	return true
 end
 
-function inside{T}(enclosing::AABB{T}, p::Vector{T})
+function inside(enclosing::AABB{T}, p::Vector{T}) where T
 	@assert size(enclosing.p) == (3,2)
 	@assert size(p) == (3,)
 
@@ -953,14 +952,14 @@ function inside{T}(enclosing::AABB{T}, p::Vector{T})
 	return true
 end
 
-function inside{T}(enclosing::Sphere{T}, p::Vector{T})
+function inside(enclosing::Sphere{T}, p::Vector{T}) where T
 	@assert size(enclosing.c) == (3,)
 	@assert size(p) == (3,)
 
 	len(p - enclosing.c) <= enclosing.r
 end
 
-function inside{T}(enclosing::Convex{T}, p::Vector{T})
+function inside(enclosing::Convex{T}, p::Vector{T}) where T
 	@assert isvalid(enclosing)
 	@assert size(p) == (3,)
 

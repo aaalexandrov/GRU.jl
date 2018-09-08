@@ -3,14 +3,14 @@ module FTFont
 using FreeType
 using GRU.Math2D
 
-type Glyph
+mutable struct Glyph
 	char::Char
 	box::Rect{Int}
 	origin::Vec2{Float32}
 	advance::Vec2{Float32}
 end
 
-type Font
+mutable struct Font
 	family::AbstractString
 	style::AbstractString
 	size::Vec2{Float32}
@@ -39,7 +39,7 @@ function font_bitmap_size(charWidth, charHeight, charCount)
 	return Int(width), Int(height)
 end
 
-type GlyphPosition
+mutable struct GlyphPosition
 	x::Int
 	y::Int
 	yMax::Int
@@ -90,7 +90,7 @@ function adding_done(font::Font)
 	end
 end
 
-type TextCursor
+mutable struct TextCursor
 	pos::Vec2{Float32}
 	lastChar::Char
 

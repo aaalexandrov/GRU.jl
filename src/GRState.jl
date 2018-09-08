@@ -5,14 +5,14 @@ abstract type DepthState <: RenderState end
 abstract type CullState <: RenderState end
 
 
-type AlphaBlendDisabled <: AlphaBlendState
+mutable struct AlphaBlendDisabled <: AlphaBlendState
 end
 
 function setstate(::AlphaBlendDisabled)
 	glDisable(GL_BLEND)
 end
 
-type AlphaBlendSrcAlpha <: AlphaBlendState
+mutable struct AlphaBlendSrcAlpha <: AlphaBlendState
 end
 
 function setstate(::AlphaBlendSrcAlpha)
@@ -21,7 +21,7 @@ function setstate(::AlphaBlendSrcAlpha)
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ZERO)
 end
 
-type AlphaBlendAdditive <: AlphaBlendState
+mutable struct AlphaBlendAdditive <: AlphaBlendState
 end
 
 function setstate(::AlphaBlendAdditive)
@@ -30,7 +30,7 @@ function setstate(::AlphaBlendAdditive)
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ZERO)
 end
 
-type AlphaBlendConstant <: AlphaBlendState
+mutable struct AlphaBlendConstant <: AlphaBlendState
 	color::Tuple{Float32, Float32, Float32, Float32}
 end
 
@@ -44,7 +44,7 @@ function setstate(state::AlphaBlendConstant)
 end
 
 
-type StencilStateDisabled <: StencilState
+mutable struct StencilStateDisabled <: StencilState
 end
 
 function setstate(::StencilStateDisabled)
@@ -52,14 +52,14 @@ function setstate(::StencilStateDisabled)
 end
 
 
-type DepthStateDisabled <: DepthState
+mutable struct DepthStateDisabled <: DepthState
 end
 
 function setstate(::DepthStateDisabled)
 	glDisable(GL_DEPTH_TEST)
 end
 
-type DepthStateLess <: DepthState
+mutable struct DepthStateLess <: DepthState
 end
 
 function setstate(::DepthStateLess)
@@ -68,14 +68,14 @@ function setstate(::DepthStateLess)
 end
 
 
-type CullStateDisabled <: CullState
+mutable struct CullStateDisabled <: CullState
 end
 
 function setstate(::CullStateDisabled)
 	glDisable(GL_CULL_FACE)
 end
 
-type CullStateCCW <: CullState
+mutable struct CullStateCCW <: CullState
 end
 
 function setstate(::CullStateCCW)
@@ -86,7 +86,7 @@ function setstate(::CullStateCCW)
 end
 
 
-type RenderStateHolder
+mutable struct RenderStateHolder
 	# we store the states with their type's supertype as key, i.e. all the AlphaBlendStates will go to the same position
 	states::Dict{DataType, RenderState}
 
@@ -102,7 +102,7 @@ function setstate(holder::RenderStateHolder, state::RenderState)
 	holder.states[supertype(typeof(state))] = state
 end
 
-function getstate{T <: RenderState}(holder::RenderStateHolder, ::Type{T}, default)
+function getstate(holder::RenderStateHolder, ::Type{T}, default) where T <: RenderState
 	@assert supertype(T) == RenderState
 	get(holder.states, T, default)
 end

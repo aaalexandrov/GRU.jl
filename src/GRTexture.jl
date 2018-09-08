@@ -1,4 +1,4 @@
-type Texture <: AbstractTexture
+mutable struct Texture <: AbstractTexture
 	texture::GLuint
 	id::Symbol
 	renderer::Renderer

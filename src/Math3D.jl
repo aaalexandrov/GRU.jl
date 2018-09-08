@@ -101,7 +101,7 @@ end
 
 rot(axis::Vector, angle::Real) = rot(Array{typeof(angle)}(3, 3), axis, angle)
 
-function axisangle{T}(m::Matrix{T})
+function axisangle(m::Matrix{T}) where T
 	t = m[1,1] + m[2,2] + m[3,3]
 	anglecos = (t-1)/2
 	anglecos >= 1 - eps(T) && return T[0,0,1], zero(T)
@@ -141,7 +141,7 @@ end
 scale(s::Vector) = diagm(vcat(s, 1))
 
 function perspective(m::Matrix, left::Real, right::Real, top::Real, bottom::Real, near::Real, far::Real; leftHanded = false)
-	zsign = leftHanded? -1 : 1
+	zsign = leftHanded ? -1 : 1
 	m[1:4, 1:4] = [ 2near/(right-left)				   0  (right+left)/(right-left)*zsign					  0 ;
 									 0  2near/(top-bottom)  (top+bottom)/(top-bottom)*zsign					  0 ;
 									 0				   0	 (-far-near)/(far-near)*zsign  -2far*near/(far-near) ;
@@ -164,7 +164,7 @@ end
 persp_vertical_fov(vfov::Real, w_h_ratio::Real, near::Real, far::Real; leftHanded = false) = persp_vertical_fov(Array{typeof(near)}(4, 4), vfov, w_h_ratio, near, far, leftHanded = leftHanded)
 
 function ortho(m::Matrix, left::Real, right::Real, top::Real, bottom::Real, near::Real, far::Real; leftHanded = false)
-	zsign = leftHanded? -1 : 1
+	zsign = leftHanded ? -1 : 1
 	m[1:4, 1:4] = [ 2/(right-left)			   0				   0 (-right-left)/(right-left) ;
 								 0  2/(top-bottom)				   0 (-top-bottom)/(top-bottom) ;
 								 0			   0 -2/(far-near)*zsign	 (-far-near)/(far-near) ;

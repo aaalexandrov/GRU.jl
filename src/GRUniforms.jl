@@ -1,4 +1,4 @@
-type UniformBlock
+mutable struct UniformBlock
 	ubo::GLuint
 	index::GLuint
 	binding::GLuint
@@ -55,7 +55,7 @@ function apply(block::UniformBlock)
 end
 
 
-type UniformVar
+mutable struct UniformVar
 	name::Symbol
 	varType::DataType
 	location::GLint
@@ -106,7 +106,7 @@ function setvalue(var::UniformVar, buffer::Vector{UInt8}, array::Array, index::I
 	end
 end
 
-load_ptr{T}(p::Ptr{T}) = unsafe_load(p)
+load_ptr(p::Ptr{T}) where T = unsafe_load(p)
 
 function getvalue(var::UniformVar, buffer::Vector{UInt8}, index::Int = 1)
 	ptr = getptr(var, buffer, index)

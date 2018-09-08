@@ -67,15 +67,15 @@ end
 
 function gl_clear_buffers(color, depth, stencil)
 	mask = 0
-	if !isnull(color)
+	if color !== nothing
 		glClearColor(get(color)...)
 		mask |= GL_COLOR_BUFFER_BIT
 	end
-	if !isnull(depth)
+	if depth !== nothing
 		glClearDepth(get(depth))
 		mask |= GL_DEPTH_BUFFER_BIT
 	end
-	if !isnull(stencil)
+	if stencil !== nothing
 		glClearStencil(get(stencil))
 		mask |= GL_STENCIL_BUFFER_BIT
 	end

@@ -1,6 +1,6 @@
 abstract type AbstractImmutableVector end
 
-immutable Vec2 <: AbstractImmutableVector
+struct Vec2 <: AbstractImmutableVector
 	x::Float32
 	y::Float32
 
@@ -8,7 +8,7 @@ immutable Vec2 <: AbstractImmutableVector
 	Vec2(x, y) = new(x, y)
 end
 
-immutable Vec3 <: AbstractImmutableVector
+struct Vec3 <: AbstractImmutableVector
 	x::Float32
 	y::Float32
 	z::Float32
@@ -17,7 +17,7 @@ immutable Vec3 <: AbstractImmutableVector
 	Vec3(x, y, z) = new(x, y, z)
 end
 
-immutable Vec4 <: AbstractImmutableVector
+struct Vec4 <: AbstractImmutableVector
 	x::Float32
 	y::Float32
 	z::Float32
@@ -27,16 +27,16 @@ immutable Vec4 <: AbstractImmutableVector
 	Vec4(x, y, z, w) = new(x, y, z, w)
 end
 
-vec2array{T}(v::T) = [v.x, v.y, v.z]
+vec2array(v::T) where T = [v.x, v.y, v.z]
 position_func(positionField::Symbol) = v->vec2array(getfield(v, positionField))
 
-immutable MatrixColumn3
+struct MatrixColumn3
 	e1::Float32
 	e2::Float32
 	e3::Float32
 end
 
-immutable MatrixColumn4
+struct MatrixColumn4
 	e1::Float32
 	e2::Float32
 	e3::Float32
@@ -45,7 +45,7 @@ end
 
 abstract type AbstractImmutableMatrix end
 
-immutable Matrix3 <: AbstractImmutableMatrix
+struct Matrix3 <: AbstractImmutableMatrix
 	c1::MatrixColumn3
 	c2::MatrixColumn3
 	c3::MatrixColumn3
@@ -53,7 +53,7 @@ immutable Matrix3 <: AbstractImmutableMatrix
 	Matrix4() = new()
 end
 
-immutable Matrix4 <: AbstractImmutableMatrix
+struct Matrix4 <: AbstractImmutableMatrix
 	c1::MatrixColumn4
 	c2::MatrixColumn4
 	c3::MatrixColumn4
@@ -64,13 +64,13 @@ end
 
 import Base: size, eltype
 
-eltype{V<:AbstractImmutableVector}(::Type{V}) = Float32
+eltype(::Type{V}) where V<:AbstractImmutableVector = Float32
 size(::Type{Vec2}) = (2,)
 size(::Type{Vec3}) = (3,)
 size(::Type{Vec4}) = (4,)
 
 isvector(t::DataType) = t <: AbstractImmutableVector
-size{T<:AbstractImmutableVector}(::Type{T}, i) = size(T)[i]
+size(::Type{T}, i) where T<:AbstractImmutableVector = size(T)[i]
 
 eltype(::Type{Matrix3}) = Float32
 size(::Type{Matrix3}) = (3, 3)
@@ -78,14 +78,14 @@ size(::Type{Matrix3}) = (3, 3)
 eltype(::Type{Matrix4}) = Float32
 size(::Type{Matrix4}) = (4, 4)
 
-size{T<:AbstractImmutableMatrix}(::Type{T}, i) = size(T)[i]
+size(::Type{T}, i) where T<:AbstractImmutableMatrix = size(T)[i]
 
 ismatrix(t::DataType) = t <: AbstractImmutableMatrix
 
-type SamplerType{GLTYPE}
+mutable struct SamplerType{GLTYPE}
 end
 
-get_sampler_type{GLTYPE}(::Type{SamplerType{GLTYPE}}) = GLTYPE
+get_sampler_type(::Type{SamplerType{GLTYPE}}) where GLTYPE = GLTYPE
 
 const gl2jlTypes =
 	Dict{UInt16, DataType}([
@@ -133,7 +133,7 @@ function typeelements(dataType::DataType)
 	end
 end
 
-function set_array_field{T}(vert::Vector{T}, field::Symbol, values::Array)
+function set_array_field(vert::Vector{T}, field::Symbol, values::Array) where T
 	fieldInd = findfirst(fieldnames(T), field)
 	elType, elCount = typeelements(fieldtype(T, fieldInd))
 	offs = fieldoffset(T, fieldInd)
@@ -149,7 +149,7 @@ function set_array_field{T}(vert::Vector{T}, field::Symbol, values::Array)
 	end
 end
 
-function set_array_fields{T}(vert::Vector{T}, fieldArrays::Dict{Symbol, Array})
+function set_array_fields(vert::Vector{T}, fieldArrays::Dict{Symbol, Array}) where T
 	for field in fieldnames(T)
 		if haskey(fieldArrays, field)
 			set_array_field(vert, field, fieldArrays[field])
