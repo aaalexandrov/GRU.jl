@@ -129,6 +129,7 @@ end
 isvalid(e::Empty) = true
 volume(e::Empty{T}) where T = zero(T)
 transform(eDest::Empty, m::Matrix, e::Empty) = nothing
+union!(e::Empty{T}, s::Shape{T}) where T = s
 
 # all space
 mutable struct Space{T} <: Shape{T}
