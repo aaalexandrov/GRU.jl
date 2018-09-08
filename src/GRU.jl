@@ -24,7 +24,7 @@ function init_resource(r::Resource, renderer::AbstractRenderer, id::Symbol)
 	r.renderer = renderer
 	r.id = id
 	add_renderer_resource(r)
-	finalizer(r, done)
+	finalizer(done, r)
 end
 
 getid(r::Resource) = r.id
