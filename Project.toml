@@ -1,7 +1,7 @@
 name = "GRU"
 uuid = "6b578940-c51e-5f61-9881-d49200b11692"
 authors = ["A. Alexandrov <greyalex2003@yahoo.com>"]
-version = "0.1.15"
+version = "0.1.16"
 
 [deps]
 DevIL = "01638602-6071-5c9b-be9d-28079212bf65"

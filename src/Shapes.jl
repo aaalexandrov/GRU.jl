@@ -1,7 +1,7 @@
 module Shapes
 
 import Base: similar, max, min, union!, empty!, isempty, convert
-import LinearAlgebra: norm
+import LinearAlgebra: norm, dot, cross
 
 export Shape, Empty, Space, Line, Plane, Sphere, AABB, Convex
 export isvalid, transform, getnormal, getpoint, volume, union!, setplane, getintersection, intersect, outside, similar, min, max, inside, assign
