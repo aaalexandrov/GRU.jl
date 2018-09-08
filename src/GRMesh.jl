@@ -28,7 +28,7 @@ function init(vl::VertexLayout, mesh::AbstractMesh, usage::Symbol)
 		jlType, elements = typeelements(fieldType)
 
 		glEnableVertexAttribArray(i-1)
-		glVertexAttribPointer(i-1, elements, jl2gltype(jlType), GL_FALSE, sizeof(layoutType), convert(Ptr{Void}, fieldoffset(layoutType, i)))
+		glVertexAttribPointer(i-1, elements, jl2gltype(jlType), GL_FALSE, sizeof(layoutType), convert(Ptr{Cvoid}, fieldoffset(layoutType, i)))
 	end
 
 	glBindVertexArray(0)

@@ -121,9 +121,9 @@ function typeelements(dataType::DataType)
 		# simple type
 		return (dataType, 1)
 	else
-		elType = Void
+		elType = Nothing
 		for t in dataType.types
-			if elType == Void
+			if elType == Nothing
 				elType = t
 			elseif elType != t
 				error("typeelements: A field with non-uniform types found")
