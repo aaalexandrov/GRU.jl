@@ -282,7 +282,7 @@ function initattributes(shader::Shader)
 end
 
 function get_sampler_index(shader::Shader, name::Symbol)
-	found = findfirst(shader.samplers, name)
+	found = findfirst(isequal(name), shader.samplers)
 	found == nothing && return -1
 	return found
 end

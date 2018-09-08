@@ -134,7 +134,7 @@ function typeelements(dataType::DataType)
 end
 
 function set_array_field(vert::Vector{T}, field::Symbol, values::Array) where T
-	fieldInd = findfirst(fieldnames(T), field)
+	fieldInd = findfirst(isequal(field), fieldnames(T))
 	elType, elCount = typeelements(fieldtype(T, fieldInd))
 	offs = fieldoffset(T, fieldInd)
 	dst = convert(Ptr{elType}, pointer(vert)) + offs

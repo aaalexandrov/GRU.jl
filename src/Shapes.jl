@@ -460,7 +460,7 @@ function update_edges(adj::Adjacency{T}, p::Plane{T}, planeRange::UnitRange{Int}
 				interval = plane2interval(p.p, e.line, e.interval)
 				if empty_interval(interval)
 					deleteat!(adj.faces[i], k)
-					deleteat!(adj.faces[j], findfirst(adj.faces[j], i))
+					deleteat!(adj.faces[j], findfirst(isequal(i), adj.faces[j]))
 					delete!(adj.edges, (i, j))
 					continue
 				else
