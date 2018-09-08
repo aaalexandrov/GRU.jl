@@ -140,7 +140,7 @@ function scale(m::Matrix, s::Vector)
   m[1,2] = m[1,3] = m[2,1] = m[2,3] = m[3,1] = m[3,2] = 0
 end
 
-scale(s::Vector) = diagm(vcat(s, 1))
+scale(s::Vector) = diagm(0 => vcat(s, 1))
 
 function perspective(m::Matrix, left::Real, right::Real, top::Real, bottom::Real, near::Real, far::Real; leftHanded = false)
 	zsign = leftHanded ? -1 : 1
