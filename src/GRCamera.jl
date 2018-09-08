@@ -44,7 +44,7 @@ end
 function calc_frustum(cam::Camera, dest::Matrix{Float32})
 	ptMin = Float32[-1, -1, -1]
 	ptMax = Float32[ 1,  1,  1]
-	projSpaceFrust = Array{Float32}(4, 6)
+	projSpaceFrust = Array{Float32}(undef, 4, 6)
 	Shapes.set_aabb_planes(projSpaceFrust, ptMin, ptMax)
 	dest[:,:] = At_mul_B(cam.proj * getview(cam), projSpaceFrust)
 end

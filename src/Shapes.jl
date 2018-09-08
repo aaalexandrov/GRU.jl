@@ -143,11 +143,11 @@ mutable struct Line{T} <: Shape{T}
 	p::Array{T, 2}
 
 	Line{T}(p::Array{T, 2}) where T = new(p)
-	Line{T}() where T = new(Array{T}(3, 2))
+	Line{T}() where T = new(Array{T}(undef, 3, 2))
 end
 
 function Line(x1::T, y1, z1, x2, y2, z2) where T
-	p = Array{T}(3, 2)
+	p = Array{T}(undef, 3, 2)
 	p[1,1] = x1
 	p[2,1] = y1
 	p[3,1] = z1
@@ -207,7 +207,7 @@ mutable struct Plane{T} <: Shape{T}
 	p::Array{T, 1}
 
 	Plane{T}(p::Array{T, 1}) where T = new(p)
-	Plane{T}() where T = new(Array{T}(4))
+	Plane{T}() where T = new(Array{T}(undef, 4))
 end
 
 Plane(a::T, b, c, d) where T = Plane{T}(T[a, b, c, d])
@@ -235,7 +235,7 @@ mutable struct Sphere{T} <: Shape{T}
 	r::T
 
 	Sphere{T}(c::Array{T, 1}, r) where T = new(c, r)
-	Sphere{T}() where T = new(Array{T}(3), 0)
+	Sphere{T}() where T = new(Array{T}(undef, 3), 0)
 end
 
 Sphere(cx::T, cy, cz, r) where T = Sphere{T}(T[cx, cy, cz], convert(T, r))
@@ -296,7 +296,7 @@ mutable struct AABB{T} <: Shape{T}
 	p::Array{T, 2}
 
 	AABB{T}(p::Array{T, 2}) where T = new(p)
-	AABB{T}() where T = new(Array{T}(3, 2))
+	AABB{T}() where T = new(Array{T}(undef, 3, 2))
 end
 
 AABB(xmin::T, ymin, zmin, xmax, ymax, zmax) where T = AABB{T}(T[xmin xmax; ymin ymax; zmin zmax])
@@ -345,8 +345,8 @@ function union!(ab1::AABB{T}, ab2::AABB{T}) where T
 end
 
 function transform(abDest::AABB{T}, m::Matrix{T}, ab::AABB{T}) where T
-	t = Array{T}(3)
-	p = Array{T}(3)
+	t = Array{T}(undef, 3)
+	p = Array{T}(undef, 3)
 	p[1] = ab.p[1, 1]
 	p[2] = ab.p[2, 1]
 	p[3] = ab.p[3, 1]
@@ -402,7 +402,7 @@ function init(adj::Adjacency{T}, ab::AABB{T}) where T
 		iDir = (i-1)%3+1
 		if i < j
 			jDir = (j-1)%3+1
-			pts = Array{T}(3, 2)
+			pts = Array{T}(undef, 3, 2)
 			for k = 1:3
 				m = 1
 				d = 0
@@ -586,7 +586,7 @@ end
 
 Convex(::Type{T}, planeCount::Int) where T = Convex{T}(zeros(T, 4, planeCount))
 Convex(c1::Convex{T}, c2::Convex{T}) where T = combine(Convex(T, size(c1.planes, 2) + size(c2.planes, 2)), c1, c2)
-Convex(ab::AABB{T}) where T = set(Convex{T}(Array{T}(4, 6)), ab)
+Convex(ab::AABB{T}) where T = set(Convex{T}(Array{T}(undef, 4, 6)), ab)
 
 function Convex(planes::Plane{T}...) where T
 	c = Convex(T, length(planes))
@@ -617,7 +617,7 @@ function combine(dst::Convex{T}, src1::Convex{T}, src2::Convex{T}) where T
 	src1Size = size(src1.planes, 2)
 	src2Size = size(src2.planes, 2)
 	if size(dst.planes, 2) != src1Size + src2Size
-		dsp.planes = Array{T}(4, src1Size + src2Size)
+		dsp.planes = Array{T}(undef, 4, src1Size + src2Size)
 	end
 	dst.planes[:, 1:src1Size] = src1.planes
 	dst.planes[:, src1Size+1:src1Size+src2Size] = src2.planes
@@ -674,7 +674,7 @@ end
 function transform_it(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T}) where T
 	cols = size(c.planes, 2)
 	if size(cDest.planes, 2) != cols
-		cDest.planes = Array{T}(3, cols)
+		cDest.planes = Array{T}(undef, 3, cols)
 	end
 	A_mul_B!(cDest.planes, m_it, c.planes)
 	for i = 1:cols

@@ -14,7 +14,7 @@ mutable struct Material
 	blockBuffers::Vector{UniformBlockBuffer}
 	states::RenderStateHolder
 
-	Material(shader::Shader) = new(shader, Dict{Symbol, Any}(), Array{UniformBlockBuffer}(length(shader.blocks)), RenderStateHolder())
+	Material(shader::Shader) = new(shader, Dict{Symbol, Any}(), Array{UniformBlockBuffer}(undef, length(shader.blocks)), RenderStateHolder())
 end
 
 isvalid(mat::Material) = isvalid(mat.shader)
