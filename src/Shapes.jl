@@ -253,7 +253,7 @@ volume(s::Sphere) = s.r^3*4pi/3
 isempty(s::Sphere{T}) where T = s.r < zero(T)
 
 function empty!(s::Sphere{T}) where T
-	s.r = -Inf
+	s.r = T(-Inf)
 	s
 end
 
@@ -313,8 +313,8 @@ volume(ab::AABB) = prod(ab.p[i, 2] - ab.p[i, 1] for i=1:3)
 isempty(ab::AABB{T}) where T = ab.p[1, 1] > ab.p[1, 2] || ab.p[2, 1] > ab.p[2, 2] || ab.p[3, 1] > ab.p[3, 2]
 
 function empty!(ab::AABB{T}) where T
-	ab.p[:, 1] = Inf
-	ab.p[:, 2] = -Inf
+	ab.p[:, 1] = T(Inf)
+	ab.p[:, 2] = T(-Inf)
 	ab
 end
 
