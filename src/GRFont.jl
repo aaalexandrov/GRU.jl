@@ -50,7 +50,7 @@ end
 
 function make_vertex(::Type{V}, pos, col, tex) where V
 	t = (pos, col, tex)
-	unsafe_load(Ptr{V}(Ref(t)))
+	unsafe_load(Ptr{V}(pointer_from_objref(Ref(t))))
 end
 
 function drawchar(font::Font, pos::FTFont.Vec2{Float32}, bmp::Array{UInt8, 2}, box::FTFont.Rect{Int}, color::Color)
