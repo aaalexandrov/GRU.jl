@@ -89,7 +89,7 @@ function setvalue(var::UniformVar, buffer::Vector{UInt8}, array::Array, index::I
 	end
 
 	if !ismatrix(var.varType) || size(var.varType, 1) == 4
-		unsafe_copy!(convert(Ptr{UInt8}, ptr), convert(Ptr{UInt8}, pointer(array)), sizeof(var.varType))
+		unsafe_copyto!(convert(Ptr{UInt8}, ptr), convert(Ptr{UInt8}, pointer(array)), sizeof(var.varType))
 	else
 		elType = eltype(var.varType)
 		elSize = sizeof(elType)
@@ -98,7 +98,7 @@ function setvalue(var::UniformVar, buffer::Vector{UInt8}, array::Array, index::I
 		pSrc = convert(Ptr{elType}, pointer(array))
 		pDst = convert(Ptr{elType}, ptr)
 		for col = 1:length(array)/rowSize
-			unsafe_copy!(pDst, pSrc, rowSize)
+			unsafe_copyto!(pDst, pSrc, rowSize)
 			pDst += 4elSize
 			pSrc += rowSize * elSize
 		end
@@ -114,7 +114,7 @@ function getvalue(var::UniformVar, buffer::Vector{UInt8}, index::Int = 1)
 	if ismatrix(var.varType)
 		result = Array{eltype(var.varType)}(undef, size(var.varType))
 		@assert sizeof(result) == sizeof(var.varType)
-		unsafe_copy!(convert(Ptr{UInt8}, pointer(result)), convert(Ptr{UInt8}, ptr), sizeof(var.varType))
+		unsafe_copyto!(convert(Ptr{UInt8}, pointer(result)), convert(Ptr{UInt8}, ptr), sizeof(var.varType))
 		return result
 	else
 		# for some reason unsafe_load can't be called directly here, wrap it in a function

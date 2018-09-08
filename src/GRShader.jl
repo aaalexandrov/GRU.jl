@@ -141,7 +141,9 @@ end
 
 function get_block_id(shader::Shader, index::GLint)
 	if index >= 0
-		return findfirst(b -> b.index == index, shader.blocks)
+		found = findfirst(b -> b.index == index, shader.blocks)
+		found == nothing && return -1
+		return found
 	else
 		return -1
 	end
@@ -279,7 +281,11 @@ function initattributes(shader::Shader)
 	shader.attribType = eval(typeExpr)
 end
 
-get_sampler_index(shader::Shader, name::Symbol) = findfirst(shader.samplers, name)
+function get_sampler_index(shader::Shader, name::Symbol)
+	found = findfirst(shader.samplers, name)
+	found == nothing && return -1
+	return found
+end
 
 function setuniform(shader::Shader, uniform::Symbol, value)
 	@assert isvalid(shader)
