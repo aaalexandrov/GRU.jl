@@ -36,7 +36,7 @@ function init(font::Font, ftFont::FTFont.Font, shader::Shader; positionFunc::Fun
 	setbound(font.model, Shapes.Space{Float32}())
 	font.charCount = 0
 
-	finalizer(font, done)
+	finalizer(done, font)
 	font
 end
 
