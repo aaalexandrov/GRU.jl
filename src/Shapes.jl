@@ -124,7 +124,7 @@ function transform(m::Matrix, s::S) where S <: Shape
 end
 
 # empty shape
-mutable struct Empty{T} <: Shape{T}
+struct Empty{T} <: Shape{T}
 end
 
 isvalid(e::Empty) = true
@@ -133,7 +133,7 @@ transform(eDest::Empty, m::Matrix, e::Empty) = nothing
 #union!(e::Empty{T}, s::Shape{T}) where T = s
 
 # all space
-mutable struct Space{T} <: Shape{T}
+struct Space{T} <: Shape{T}
 end
 
 isvalid(s::Space) = true
