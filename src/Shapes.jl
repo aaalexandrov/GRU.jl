@@ -677,7 +677,7 @@ function transform_it(cDest::Convex{T}, m_it::Matrix{T}, c::Convex{T}) where T
 	if size(cDest.planes, 2) != cols
 		cDest.planes = Array{T}(undef, 3, cols)
 	end
-	A_mul_B!(cDest.planes, m_it, c.planes)
+	cDest.planes = m_it * c.planes
 	for i = 1:cols
 		invL = 1/len(cDest.planes[1, i], cDest.planes[2, i], cDest.planes[3, i])
 		cDest.planes[1, i] *= invL
