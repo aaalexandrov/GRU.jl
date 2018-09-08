@@ -56,13 +56,6 @@ git-tree-sha1 = "a0cfb3fafe1e2492d372bc3e15c183a21cbb7ca1"
 uuid = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
 version = "1.1.0"
 
-[[ObjGeom]]
-git-tree-sha1 = "fa39041768a02b40c8a19d4d29f59c71628c74ce"
-repo-rev = "master"
-repo-url = "dev/ObjGeom"
-uuid = "3358aeb3-6d27-571a-8ec9-3ccc38d14486"
-version = "0.0.0"
-
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
