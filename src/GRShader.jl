@@ -93,7 +93,7 @@ function get_info_log(glObj::GLuint, get::Function, getInfoLog::Function)
 
 	message = Array{UInt8}(undef, logLength[1])
 	getInfoLog(glObj, logLength[1], C_NULL, message)
-	unsafe_string(message)
+	String(message)
 end
 
 get_shader_info_log(shaderObj::GLuint) = get_info_log(shaderObj, glGetShaderiv, glGetShaderInfoLog)
