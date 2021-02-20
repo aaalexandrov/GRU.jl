@@ -22,15 +22,15 @@ function init(shader::Shader, renderer::Renderer, path::AbstractString, setupMat
 	open(path * ".frag") do f
 		psSource = read(f)
 	end
-	init(shader, renderer, pointer(vsSource), length(vsSource), pointer(psSource), length(psSource), setupMaterial, id = id)
+	init(shader, renderer, vsSource, psSource, setupMaterial, id = id)
 end
 
-function init(shader::Shader, renderer::Renderer, vs::Ptr{UInt8}, vsLength::Int, ps::Ptr{UInt8}, psLength::Int, setupMaterial::Function = identity; id::Symbol = :shader)
+function init(shader::Shader, renderer::Renderer, vs::AbstractArray{UInt8}, ps::AbstractArray{UInt8}, setupMaterial::Function = identity; id::Symbol = :shader)
 	@assert !isvalid(shader)
 
-	vertexShader = compileshader(GL_VERTEX_SHADER, vs, vsLength)
+	vertexShader = compileshader(GL_VERTEX_SHADER, vs, id)
 	if vertexShader != 0
-		fragmentShader = compileshader(GL_FRAGMENT_SHADER, ps, psLength)
+		fragmentShader = compileshader(GL_FRAGMENT_SHADER, ps, id)
 		if fragmentShader != 0
 			shader.program = glCreateProgram()
 
@@ -99,11 +99,11 @@ end
 get_shader_info_log(shaderObj::GLuint) = get_info_log(shaderObj, glGetShaderiv, glGetShaderInfoLog)
 get_program_info_log(programObj::GLuint) = get_info_log(programObj, glGetProgramiv, glGetProgramInfoLog)
 
-function compileshader(shaderType::UInt32, source::Ptr{UInt8}, sourceLength::Int)
+function compileshader(shaderType::UInt32, source::AbstractArray{UInt8}, id::Symbol)
 	shaderObj = glCreateShader(shaderType)
 
-	srcArray = Ptr{UInt8}[source]
-	lenArray = GLint[sourceLength]
+	srcArray = Ptr{UInt8}[pointer(source)]
+	lenArray = GLint[length(source)]
 	glShaderSource(shaderObj, 1, srcArray, lenArray)
 
 	glCompileShader(shaderObj)
@@ -114,7 +114,7 @@ function compileshader(shaderType::UInt32, source::Ptr{UInt8}, sourceLength::Int
 	if compileSuccess[1] != GL_TRUE
 		msg = get_shader_info_log(shaderObj)
 		shaderTypeName = shaderType == GL_VERTEX_SHADER ? "VERTEX" : (shaderType == GL_FRAGMENT_SHADER ? "FRAGMENT" : "$shaderType")
-		@info("Error compiling shader type $shaderTypeName\n$msg")
+		@info("Error compiling shader type $shaderTypeName with id $id\n$msg")
 
 		glDeleteShader(shaderObj)
 		shaderObj = 0
@@ -193,8 +193,11 @@ function inituniforms(shader::Shader)
 	# set program so we can set sampler uniforms
 	glUseProgram(shader.program)
 	@assert glGetError() == GL_NO_ERROR
+	nameLen = GLsizei[0]
+	varSize = GLsizei[0]
+	varType = GLenum[0]
 	for i in 1:count
-		glGetActiveUniformName(shader.program, uniformIndices[i], length(nameBuf), C_NULL, nameBuf)
+		glGetActiveUniform(shader.program, uniformIndices[i], length(nameBuf), nameLen, varSize, varType, nameBuf)
 		@assert glGetError() == GL_NO_ERROR
 
 		blockId = get_block_id(shader, uniformBlockIndices[i])
