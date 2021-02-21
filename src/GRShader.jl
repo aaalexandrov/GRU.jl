@@ -16,11 +16,11 @@ isvalid(shader::Shader) = shader.program != 0
 function init(shader::Shader, renderer::Renderer, path::AbstractString, setupMaterial::Function = identity; id::Symbol = Symbol(path))
 	local vsSource, psSource
 	open(path * ".vert") do f
-		vsSource = read(f)
+		vsSource = vcat(renderer.shaderPreamble, read(f))
 	end
 
 	open(path * ".frag") do f
-		psSource = read(f)
+		psSource = vcat(renderer.shaderPreamble, read(f))
 	end
 	init(shader, renderer, vsSource, psSource, setupMaterial, id = id)
 end

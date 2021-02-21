@@ -49,6 +49,6 @@ include("GRFont.jl")
 
 export Vec2, Vec3, Vec4, Matrix4
 export VertexLayout, Mesh, Shader, Texture, Material, Model
-export isvalid, init, done, apply, setuniform, getuniform, render, position_func
+export isvalid, init, done, set_shader_preamble, apply, setuniform, getuniform, render, position_func
 
 end

@@ -9,8 +9,9 @@ mutable struct Renderer <: AbstractRenderer
 	clearColor::Union{Color, Nothing}
 	clearStencil::Union{Int, Nothing}
 	clearDepth::Union{Float64, Nothing}
+	shaderPreamble::Array{UInt8}
 
-	Renderer() = new(Camera(), Dict{Symbol, WeakRef}(), RenderStateHolder(), Vector{Renderable}(undef, 0), identity, (0f0, 0f0, 0f0, 1f0), 0, 1.0)
+	Renderer() = new(Camera(), Dict{Symbol, WeakRef}(), RenderStateHolder(), Vector{Renderable}(undef, 0), identity, (0f0, 0f0, 0f0, 1f0), 0, 1.0, UInt8[])
 end
 
 function init(renderer::Renderer)
@@ -58,6 +59,10 @@ end
 set_clear_color(renderer::Renderer, c) = renderer.clearColor = c
 set_clear_stencil(renderer::Renderer, s) = renderer.clearStencil = s
 set_clear_depth(renderer::Renderer, d) = renderer.clearDepth = d
+
+function set_shader_preamble(renderer::Renderer, preamble::AbstractArray{UInt8})
+	renderer.shaderPreamble = preamble[:]
+end
 
 function render_frame(renderer::Renderer)
 	gl_clear_buffers(renderer.clearColor, renderer.clearDepth, renderer.clearStencil)
