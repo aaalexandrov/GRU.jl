@@ -20,6 +20,9 @@ function init(tex::Texture, renderer::Renderer, data::Ptr{UInt8}, w::Integer, h:
 	glBindTexture(GL_TEXTURE_2D, tex.texture)
 	glTexImage2D(GL_TEXTURE_2D, 0, pixelFormat, w, h, 0, pixelFormat, GL_UNSIGNED_BYTE, data)
 	glGenerateMipmap(GL_TEXTURE_2D)
+	if glGetError() != GL_NO_ERROR
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
+	end
 	tex
 end
 
@@ -34,48 +37,37 @@ end
 
 # todo: add support for DXT textures
 
-const il2glFormat =
-	Dict([
-		(DevIL.IL_RGBA, GL_RGBA),
-		(DevIL.IL_BGRA, GL_BGRA),
-		(DevIL.IL_RGB, GL_RGB),
-		(DevIL.IL_BGR, GL_BGR),
-		(DevIL.IL_LUMINANCE_ALPHA, GL_RG),
-		(DevIL.IL_LUMINANCE, GL_RED),
-		(DevIL.IL_ALPHA, GL_RED)
-	])
+import FileIO, ImageIO, ColorTypes, FixedPointNumbers
 
 function init(tex::Texture, renderer::Renderer, texPath::AbstractString; id::Symbol = Symbol(texPath))
-	img = DevIL.ilGenImage()
-	DevIL.ilBindImage(img)
-	if DevIL.ilLoadImage(pointer(texPath)) != DevIL.IL_TRUE
-		error("Failed loading texture $texPath")
+	img = FileIO.load(texPath)
+	w, h = size(img)
+	elem = eltype(img)
+	local fmt, u8elem
+	if elem <: ColorTypes.AbstractRGBA
+		fmt = GL_RGBA
+		u8elem = ColorTypes.RGBA{FixedPointNumbers.N0f8}
+	elseif elem <: ColorTypes.AbstractRGB
+		fmt = GL_RGB
+		u8elem = ColorTypes.RGB{FixedPointNumbers.N0f8}
+	elseif elem <: ColorTypes.AbstractGrayA
+		fmt = GL_RG
+		u8elem = ColorTypes.GrayA{FixedPointNumbers.N0f8}
+	elseif elem <: ColorTypes.AbstractGray
+		fmt = GL_RED
+		u8elem = ColorTypes.Gray{FixedPointNumbers.N0f8}
+	else
+		error("Unsupported image element type $elem for image file $texPath")
 	end
 
-	w = DevIL.ilGetInteger(DevIL.IL_IMAGE_WIDTH)
-	h = DevIL.ilGetInteger(DevIL.IL_IMAGE_HEIGHT)
-	fmt = DevIL.ilGetInteger(DevIL.IL_IMAGE_FORMAT)
-	typ = DevIL.ilGetInteger(DevIL.IL_IMAGE_TYPE)
-
-	needConvert = typ != DevIL.IL_UNSIGNED_BYTE
-	if !haskey(il2glFormat, fmt)
-		fmt = DevIL.IL_RGBA
-		needConvert = true
+	if elem != u8elem
+		img = map(u8elem, img)
 	end
-	if needConvert
-		if DevIL.ilConvertImage(fmt, DevIL.IL_UNSIGNED_BYTE) != DevIL.IL_TRUE
-			error("Error converting texture $texPath to a supported format")
-		end
-	end
-	pixelFormat = il2glFormat[fmt]
 
-	data = DevIL.ilGetData()
-
-	init(tex, renderer, data, w, h, pixelFormat; id = id)
-
-	DevIL.ilDeleteImage(img)
+	init(tex, renderer, pointer(reinterpret(UInt8, img)), w, h, fmt; id = id)
 	tex
 end
+
 
 function done(tex::Texture)
 	if isvalid(tex)

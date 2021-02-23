@@ -1,5 +1,8 @@
 julia 1.0-
 ModernGL
-DevIL 0.5.0
+FileIO
+ImageIO
+ColorTypes
+FixedPointNumbers
 FreeType
 LinearAlgebra

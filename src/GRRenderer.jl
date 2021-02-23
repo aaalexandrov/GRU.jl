@@ -15,11 +15,9 @@ mutable struct Renderer <: AbstractRenderer
 end
 
 function init(renderer::Renderer)
-	DevIL.ilInit()
 end
 
 function done(renderer::Renderer)
-	DevIL.ilShutDown()
 	while !isempty(renderer.resources)
 		id, res = first(renderer.resources)
 		if res.value != nothing

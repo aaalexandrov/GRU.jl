@@ -13,7 +13,6 @@ using LinearAlgebra
 using ModernGL
 using .GLHelper
 
-import DevIL
 import .Shapes
 
 abstract type AbstractRenderer end
