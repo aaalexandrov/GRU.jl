@@ -37,7 +37,7 @@ end
 
 # todo: add support for DXT textures
 
-import FileIO, ImageIO, ColorTypes, FixedPointNumbers
+import FileIO, ImageMagick, ColorTypes, FixedPointNumbers
 
 function init(tex::Texture, renderer::Renderer, texPath::AbstractString; id::Symbol = Symbol(texPath))
 	img = FileIO.load(texPath)
